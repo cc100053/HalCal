@@ -95,7 +95,7 @@ fun SorobanCanvas(
 
     // Outer frame coloring
     val themeColor = MaterialTheme.colorScheme.primary
-    val isDark = MaterialTheme.colorScheme.background.value == 0xFF121212.toULong().value
+    val isDark = MaterialTheme.colorScheme.background == Color(0xFF121212)
     
     val frameColor = if (isDark) Color(0xFF2E241E) else Color(0xFF5C4033) // Wood brown
     val rodColor = if (isDark) Color(0xFF4A4A4A) else Color(0xFF8A8A8A)

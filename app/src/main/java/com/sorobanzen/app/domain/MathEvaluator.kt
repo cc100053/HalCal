@@ -1,7 +1,5 @@
 package com.sorobanzen.app.domain
 
-import java.util.Stack
-
 object MathEvaluator {
 
     /**
@@ -13,21 +11,21 @@ object MathEvaluator {
         if (sanitized.isEmpty()) return 0.0
         
         return try {
-            parseAndEvaluate(sanitized)
+            ExpressionParser(sanitized).parse()
         } catch (e: Exception) {
             Double.NaN
         }
     }
 
-    private fun parseAndEvaluate(str: String): Double {
-        var pos = -1
-        var ch = 0
+    private class ExpressionParser(val str: String) {
+        private var pos = -1
+        private var ch = 0
 
-        fun nextChar() {
+        private fun nextChar() {
             ch = if (++pos < str.length) str[pos].code else -1
         }
 
-        fun eat(charToEat: Int): Boolean {
+        private fun eat(charToEat: Int): Boolean {
             while (ch == ' '.code) nextChar()
             if (ch == charToEat) {
                 nextChar()
@@ -36,7 +34,14 @@ object MathEvaluator {
             return false
         }
 
-        fun parseExpression(): Double {
+        fun parse(): Double {
+            nextChar()
+            val x = parseExpression()
+            if (pos < str.length) throw RuntimeException("Unexpected: " + ch.toChar())
+            return x
+        }
+
+        private fun parseExpression(): Double {
             var x = parseTerm()
             while (true) {
                 if (eat('+'.code)) x += parseTerm() // addition
@@ -45,7 +50,7 @@ object MathEvaluator {
             }
         }
 
-        fun parseTerm(): Double {
+        private fun parseTerm(): Double {
             var x = parseFactor()
             while (true) {
                 if (eat('*'.code)) x *= parseFactor() // multiplication
@@ -57,7 +62,7 @@ object MathEvaluator {
             }
         }
 
-        fun parseFactor(): Double {
+        private fun parseFactor(): Double {
             if (eat('+'.code)) return parseFactor() // unary plus
             if (eat('-'.code)) return -parseFactor() // unary minus
 
@@ -75,10 +80,5 @@ object MathEvaluator {
 
             return x
         }
-
-        nextChar()
-        val result = parseExpression()
-        if (pos < str.length) throw RuntimeException("Unexpected: " + ch.toChar())
-        return result
     }
 }

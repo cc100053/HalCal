@@ -30,6 +30,7 @@ import com.sorobanzen.app.ui.screens.SorobanScreen
 import com.sorobanzen.app.ui.theme.SorobanZenTheme
 import com.sorobanzen.app.viewmodel.ZenViewModel
 import com.sorobanzen.app.viewmodel.ZenViewModelFactory
+import androidx.lifecycle.lifecycleScope
 import java.util.Locale
 
 class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
@@ -49,22 +50,13 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
 
         // Observe TTS event flow
-        lifecycle.addObserver(object : androidx.lifecycle.LifecycleEventObserver {
-            override fun onStateChanged(
-                source: androidx.lifecycle.LifecycleOwner,
-                event: androidx.lifecycle.Lifecycle.Event
-            ) {
-                if (event == androidx.lifecycle.Lifecycle.Event.ON_CREATE) {
-                    androidx.lifecycle.lifecycleScope.launchWhenStarted {
-                        viewModel.ttsEvent.collect { reading ->
-                            if (isTtsInitialized) {
-                                tts.speak(reading, TextToSpeech.QUEUE_FLUSH, null, null)
-                            }
-                        }
-                    }
+        lifecycleScope.launchWhenStarted {
+            viewModel.ttsEvent.collect { reading ->
+                if (isTtsInitialized) {
+                    tts.speak(reading, TextToSpeech.QUEUE_FLUSH, null, null)
                 }
             }
-        })
+        }
 
         setContent {
             // Observe settings configurations

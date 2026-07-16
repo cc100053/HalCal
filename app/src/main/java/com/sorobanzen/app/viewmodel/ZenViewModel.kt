@@ -10,6 +10,7 @@ import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.domain.TaxCalculator
 import com.sorobanzen.app.domain.UnitConverter
 import com.sorobanzen.app.domain.TatamiPlanner
+import kotlin.math.pow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -315,7 +316,7 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
         if (breakdown != null) {
             _displayText.value = breakdown.totalAmount.toLong().toString()
             saveToHistory(
-                expression = "${breakdown.originalAmount} + 消費税 (${(breakdown.taxRate * BigDecimal("100")).toInt()}%)",
+                expr = "${breakdown.originalAmount} + 消費税 (${(breakdown.taxRate * BigDecimal("100")).toInt()}%)",
                 resultStr = breakdown.totalAmount.toLong().toString(),
                 mode = "Tax"
             )
@@ -327,7 +328,7 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
         val breakdown = TaxCalculator.removeTax(inputVal, _taxRate.value)
         _displayText.value = breakdown.originalAmount.toLong().toString()
         saveToHistory(
-            expression = "${breakdown.totalAmount} - 消費税抜 (${(breakdown.taxRate * BigDecimal("100")).toInt()}%)",
+            expr = "${breakdown.totalAmount} - 消費税抜 (${(breakdown.taxRate * BigDecimal("100")).toInt()}%)",
             resultStr = breakdown.originalAmount.toLong().toString(),
             mode = "Tax"
         )

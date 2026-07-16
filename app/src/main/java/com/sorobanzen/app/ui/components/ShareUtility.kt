@@ -57,7 +57,7 @@ object ShareUtility {
         val valuePaint = Paint().apply {
             color = Color.parseColor("#1A1A1A") // Charcoal Text
             textSize = 72f
-            fontWeight = Paint.Style.BOLD
+            typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
             isAntiAlias = true
             textAlign = Paint.Align.CENTER
         }

@@ -200,12 +200,17 @@ fun TatamiPlannerScreen(
         )
 
         // Draw mats in canvas
+        val isDarkTheme = MaterialTheme.colorScheme.background == Color(0xFF121212)
+        val tatamiFill = if (isDarkTheme) Color(0xFF3B443B) else Color(0xFFD2E2CA)
+        val tatamiBorder = if (isDarkTheme) Color(0xFF232B23) else Color(0xFF6E8E64)
+        val bindingColor = if (isDarkTheme) Color(0xFF151915) else Color(0xFF333333)
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1.2f)
                 .clip(RoundedCornerShape(16.dp))
-                .background(if (MaterialTheme.colorScheme.background.value == 0xFF121212.toULong().value) Color(0xFF1E1E1E) else Color(0xFFF3EFEB))
+                .background(if (isDarkTheme) Color(0xFF1E1E1E) else Color(0xFFF3EFEB))
                 .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
                 .padding(16.dp)
         ) {
@@ -245,14 +250,6 @@ fun TatamiPlannerScreen(
                 )
 
                 // Draw Tatami Mats
-                val isDark = MaterialTheme.colorScheme.background.value == 0xFF121212.toULong().value
-                
-                // Traditional colors: dry straw green
-                val tatamiFill = if (isDark) Color(0xFF3B443B) else Color(0xFFD2E2CA)
-                val tatamiBorder = if (isDark) Color(0xFF232B23) else Color(0xFF6E8E64)
-                // Tatami bindings/borders (black / dark brown borders on edges)
-                val bindingColor = if (isDark) Color(0xFF151915) else Color(0xFF333333)
-
                 mats.forEach { mat ->
                     val matX = (offsetX + mat.x * scale).toFloat()
                     val matY = (offsetY + mat.y * scale).toFloat()
