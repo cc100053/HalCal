@@ -17,9 +17,11 @@ class ShakeDetector(private val onShake: () -> Unit) : SensorEventListener {
     private var lastX = 0f
     private var lastY = 0f
     private var lastZ = 0f
+    private var lastShake: Long = 0
     
     companion object {
         private const val SHAKE_THRESHOLD = 800 // Adjust sensitivity
+        private const val SHAKE_COOLDOWN_MS = 1_000
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -36,7 +38,8 @@ class ShakeDetector(private val onShake: () -> Unit) : SensorEventListener {
                 
                 val speed = sqrt((x - lastX) * (x - lastX) + (y - lastY) * (y - lastY) + (z - lastZ) * (z - lastZ)) / diffTime * 10000
                 
-                if (speed > SHAKE_THRESHOLD) {
+                if (speed > SHAKE_THRESHOLD && curTime - lastShake >= SHAKE_COOLDOWN_MS) {
+                    lastShake = curTime
                     onShake()
                 }
                 

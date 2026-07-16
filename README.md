@@ -1,15 +1,16 @@
-# Soroban Zen (そろばん禅)
+# そろばん禅
 
-Soroban Zen is a premium, beautifully crafted, wabi-sabi inspired Android application that serves as a modern minimalist calculator in portrait mode and a fully interactive, realistic Japanese abacus (Soroban) in landscape mode. The application includes seamless orientation transitions, standard calculations, consumption tax rates, traditional Japanese unit conversions, an interactive tatami mat planner, and an educational mental math practice mode.
+そろばん禅 is a premium, beautifully crafted, wabi-sabi inspired Android application that serves as a modern minimalist calculator in portrait mode and a fully interactive, realistic Japanese abacus in landscape mode. The product interface is intentionally Japanese-only across every device locale. The application includes seamless orientation transitions, standard calculations, consumption tax rates, traditional Japanese unit conversions, and an educational mental math practice mode.
 
 ---
 
 ## 🌸 Core Concept & Design System
 The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese minimalist aesthetic focusing on natural asymmetry, simplicity, and warmth):
-- **Color Palette**: Off-white paper background (`#FAF9F6`), matte charcoal ink text (`#1E1E1E`), traditional moss green (`#5E6F54`), pale sakura pink (`#DCAEAF`), and slate indigo blue (`#324A5E`).
-- **Typography**: Clean, readable sans-serif text aligned with Japanese design principles.
-- **Micro-interactions**: Satisfying haptic feedback (bead snap clicks) and spring-based physics for beads sliding and orientation transitions.
-- **Orientation Transitions**: When rotating the screen, a custom `AnimatedContent` combines scaling, sliding, and fading to simulate an organic unfolding transition instead of a jarring layout swap.
+- **Color Palette**: Warm washi (`#F4F0E7`), sumi ink (`#25231F`), moss (`#586A55`), aizome indigo (`#3E5363`), and a restrained sakura accent (`#A9676D`), with a dedicated charcoal-paper dark theme.
+- **Typography**: System serif for expressive headings and system sans-serif for controls, body copy, and precise numeric displays, preserving reliable Japanese glyph coverage without bundled font weight.
+- **Crafted Surfaces**: A deterministic Compose-drawn washi texture, vector ensō mark, softly raised cards, and a layered wooden soroban frame provide depth without raster UI assets.
+- **Micro-interactions**: Tactile feedback, bead click sounds, spring-based bead motion, deliberate destructive-action confirmation, and short fade transitions reinforce state without visual noise.
+- **Responsive Layout**: System safe areas, 48dp-class touch targets, capped tablet keypad width, scrollable tool sheets, and responsive landscape controls keep the interface composed across phones and tablets.
 
 ---
 
@@ -19,21 +20,20 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 - **Traditional Layout**: Modern standard 1-5 abacus (1 heaven bead + 4 earth beads per rod).
 - **Responsive Rods**: Configurable from 7 to 17 rods with traditional alignment indicators/dots (dots on every 4th rod representing thousands, millions, etc.).
 - **Satisfying Interaction**: Custom canvas rendering of bi-conical beads (*soroban-dama*) with drag-and-slide gestures, haptic pops, and spring-snapping physics.
-- **Real-Time Translation**: Displays the numerical value alongside its Japanese Kanji reading (e.g., `十二万三千四百五十六`) and phonetic Romaji reading (e.g., `jū ni man san sen...`).
+- **Real-Time Reading**: Displays the numerical value alongside its Japanese Kanji reading (e.g., `十二万三千四百五十六`).
 - **Text-to-Speech (TTS)**: Built-in voice synthesizer that speaks out numbers in native Japanese pronunciation.
 - **Shake to Reset**: Integrates Android's accelerometer; physically shaking the device triggers a satisfying clear-all animation and haptic vibration.
 - **Abacus Sharing**: Automatically generates an off-screen bitmap/image card of the abacus's current state (showing beads, numbers, readings, and a signature watermark) and opens the Android sharing sheet.
 
 ### 2. Normal Calculator Mode (Portrait)
-- Clean, non-crowded button grid with warm, rounded buttons.
+- Quiet-luxury display hierarchy with a centered ensō wordmark and warm, rounded tactile keys.
 - Full support for basic operations (Addition, Subtraction, Multiplication, Division) and precedence math parsing.
-- Access to specialized bottom sheets for Japanese tools.
-- Room database calculation history with scrollable records and instant reload.
+- Access to localized, scrollable bottom sheets for Japanese tools.
+- Room database calculation history with scrollable records, instant reload, and clear-history confirmation.
 
 ### 3. Traditional Japanese Tools
 - **Consumption Tax Calculator**: Handles standard (10%) and reduced (8% for food/essentials) tax rates with detailed tax breakdowns.
 - **Traditional Unit Converter**: Converts metric units to/from length (shaku, sun, ken), area (tsubo, jo), volume (sho, go), and weight (kan, momme) with high accuracy.
-- **Tatami Room Planner**: Calculates required Tatami mats based on customizable room width/length (in meters) and regional mat sizing (Kyoto/Kyouma, Nagoya/Ainoma, Tokyo/Edoma). Draws an interactive auspicious arrangement of mats (Syugi-biki pattern) with custom Canvas rendering.
 - **Practice / Training Mode**: An educational mental math arithmetic test with a 60-second countdown timer and score tracking.
 
 ---
@@ -51,21 +51,20 @@ calculator/
 │   │   │   │   │   └── HistoryEntity.kt       (Database Table schema)
 │   │   │   │   ├── domain/
 │   │   │   │   │   ├── MathEvaluator.kt       (Mathematical expression parser)
-│   │   │   │   │   ├── SorobanEngine.kt       (Kanji & Romaji number translation)
+│   │   │   │   │   ├── SorobanEngine.kt       (Japanese Kanji number reading)
 │   │   │   │   │   ├── TaxCalculator.kt       (Consumption tax standardizer)
-│   │   │   │   │   ├── TatamiPlanner.kt       (Tatami sizing & layout math)
 │   │   │   │   │   └── UnitConverter.kt       (Traditional Japanese measurements)
 │   │   │   │   ├── ui/
 │   │   │   │   │   ├── components/
 │   │   │   │   │   │   ├── CalculatorGrid.kt  (Keypad UI)
 │   │   │   │   │   │   ├── ShakeDetector.kt   (Accelerometer shake listener)
 │   │   │   │   │   │   ├── ShareUtility.kt    (Off-screen bitmap sharing engine)
-│   │   │   │   │   │   └── SorobanCanvas.kt   (Custom abacus canvas & gestures)
+│   │   │   │   │   │   ├── SorobanCanvas.kt   (Custom abacus canvas & gestures)
+│   │   │   │   │   │   └── ZenComponents.kt   (Shared visual system components)
 │   │   │   │   │   ├── screens/
 │   │   │   │   │   │   ├── CalculatorScreen.kt (Portrait layout & sheets controller)
 │   │   │   │   │   │   ├── PracticeScreen.kt  (Mental math module)
 │   │   │   │   │   │   ├── SettingsScreen.kt  (Configuration panel)
-│   │   │   │   │   │   ├── TatamiPlannerScreen.kt (Tatami blueprint grid canvas)
 │   │   │   │   │   │   ├── TaxScreen.kt       (Tax breakout card)
 │   │   │   │   │   │   └── UnitConverterScreen.kt (Traditional converter)
 │   │   │   │   │   └── theme/
@@ -74,8 +73,7 @@ calculator/
 │   │   │   │   │       └── Type.kt            (Typography styles)
 │   │   │   │   └── MainActivity.kt            (Entry point, Orientation & TTS handler)
 │   │   │   ├── res/
-│   │   │   │   ├── values/strings.xml         (English resources)
-│   │   │   │   ├── values-ja/strings.xml      (Default Japanese resources)
+│   │   │   │   ├── values/strings.xml         (Japanese-only resources)
 │   │   │   │   ├── values/themes.xml          (Window style attributes)
 │   │   │   │   └── xml/file_paths.xml         (Sharing directory definitions)
 │   │   │   └── AndroidManifest.xml            (App settings declaration)

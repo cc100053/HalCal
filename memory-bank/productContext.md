@@ -5,7 +5,7 @@
 The device orientation is the top-level mode selector:
 
 - **Portrait:** calculator home. Users can open history, settings, tax, traditional units, or practice as overlays/screens.
-- **Landscape:** interactive soroban. Users manipulate rods, inspect numeric/Kanji/Romaji readings, invoke Japanese TTS, clear, shake to reset, share an image, or open usage information.
+- **Landscape:** interactive soroban. Users manipulate rods, inspect numeric/Kanji readings, invoke Japanese TTS, clear, shake to reset, share an image, or open usage information.
 - **Settings active:** settings temporarily replaces the orientation-selected screen until the user goes back.
 
 `MainActivity` handles orientation changes itself through manifest `configChanges`; Compose observes `LocalConfiguration` and animates between the two modes.
@@ -25,7 +25,7 @@ The device orientation is the top-level mode selector:
 
 - Each rod is a decimal digit: the heaven bead contributes five and up to four earth beads contribute one each.
 - Rods are ordered most-significant to least-significant from left to right.
-- Japanese readings use four-digit units (`万`, `億`, `兆`, `京`) and include irregular Romaji pronunciations such as `sanzen`, `roppyaku`, and `hassen`.
+- Japanese readings use four-digit Kanji units (`万`, `億`, `兆`, `京`). Romaji is intentionally not generated or shown.
 - Sharing renders a fixed 1200×750 warm-paper PNG in the app cache, exposes it through `FileProvider`, and launches the Android chooser.
 
 ### Tax
@@ -52,12 +52,14 @@ The device orientation is the top-level mode selector:
 
 ## Design language
 
-- Wabi-sabi: quiet, warm, minimal, and tactile.
-- Light palette: paper white, charcoal, moss green, indigo, sakura, and wood tones.
-- Dark palette: matte black/charcoal with muted versions of the same accents.
-- The system sans-serif stack is used so Android can select appropriate Japanese glyphs.
-- Motion and feedback should reinforce state changes without becoming busy.
+- Wabi-sabi quiet luxury: warm, minimal, tactile, and deliberately restrained rather than decorative.
+- Light palette: washi, sumi ink, moss green, aizome indigo, restrained sakura, ochre, and layered wood tones.
+- Dark palette: charcoal paper and raised warm-black surfaces with softened natural pigments.
+- System serif is reserved for expressive headings; system sans-serif handles controls, body copy, and numeric displays so Android can select reliable Japanese glyphs without bundled fonts.
+- Shared Compose components provide the procedural washi texture, ensō mark, cards, choice pills, screen headers, and metric tiles. Functional UI does not depend on raster assets.
+- Primary touch targets should remain at least 48dp-class, safe drawing insets must be respected, and wider portrait layouts cap the calculator keypad rather than scaling it indefinitely.
+- Motion and feedback reinforce state changes without becoming busy: short fades for screen changes, spring bead motion, confirmation before destructive history clearing, and preference-gated haptics/sound/TTS.
 
 ## Localization state
 
-Android string resources exist for English (`values`) and Japanese (`values-ja`). Some screen copy and accessibility descriptions remain hard-coded or bilingual. New work should use resources in both locales and gradually remove hard-coded strings when touching nearby UI.
+The product interface is Japanese-only. Japanese strings live in the default `values/strings.xml`, so the app remains Japanese regardless of the device locale; there is no English locale overlay. User-visible copy, accessibility descriptions, history modes, dates, generated share cards, errors, and number readings must remain Japanese. Mathematical and international measurement symbols such as `m²`, `kg`, `+`, and `÷` are allowed.

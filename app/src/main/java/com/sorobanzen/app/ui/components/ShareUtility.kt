@@ -11,20 +11,22 @@ import android.graphics.RectF
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.Locale
 
 object ShareUtility {
 
     /**
      * Draws the Soroban state onto a Bitmap, saves it, and shares it.
      */
-    fun shareSorobanState(
+    suspend fun createSorobanShareIntent(
         context: Context,
         value: Long,
         kanjiReading: String,
-        romajiReading: String,
         rodsCount: Int,
         rodValues: IntArray
-    ) {
+    ): Intent = withContext(Dispatchers.IO) {
         val width = 1200
         val height = 750
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -52,7 +54,7 @@ object ShareUtility {
             isAntiAlias = true
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText("Soroban Zen • そろばん禅", (width / 2).toFloat(), 70f, titlePaint)
+        canvas.drawText("そろばん禅", (width / 2).toFloat(), 70f, titlePaint)
 
         val valuePaint = Paint().apply {
             color = Color.parseColor("#1A1A1A") // Charcoal Text
@@ -61,7 +63,7 @@ object ShareUtility {
             isAntiAlias = true
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText(String.format("%,d", value), (width / 2).toFloat(), 160f, valuePaint)
+        canvas.drawText(String.format(Locale.ROOT, "%,d", value), (width / 2).toFloat(), 160f, valuePaint)
 
         val readingPaint = Paint().apply {
             color = Color.parseColor("#5E6F54") // Soft dark moss
@@ -71,17 +73,9 @@ object ShareUtility {
         }
         canvas.drawText(kanjiReading, (width / 2).toFloat(), 220f, readingPaint)
 
-        val romajiPaint = Paint().apply {
-            color = Color.parseColor("#6B6A66") // Muted gray
-            textSize = 24f
-            isAntiAlias = true
-            textAlign = Paint.Align.CENTER
-        }
-        canvas.drawText(romajiReading, (width / 2).toFloat(), 260f, romajiPaint)
-
         // --- 3. Draw Soroban Abacus ---
         val abacusLeft = 100f
-        val abacusTop = 320f
+        val abacusTop = 285f
         val abacusWidth = width - 200f
         val abacusHeight = 350f
         
@@ -180,28 +174,25 @@ object ShareUtility {
             }
         }
 
-        // --- 4. Save and share ---
-        try {
-            val cachePath = File(context.cacheDir, "shared_images")
-            cachePath.mkdirs()
-            val stream = FileOutputStream(File(cachePath, "soroban_state.png"))
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            stream.close()
-
-            val imageFile = File(cachePath, "soroban_state.png")
-            val contentUri = FileProvider.getUriForFile(context, "com.sorobanzen.app.fileprovider", imageFile)
-
-            if (contentUri != null) {
-                val shareIntent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    setDataAndType(contentUri, context.contentResolver.getType(contentUri))
-                    putExtra(Intent.EXTRA_STREAM, contentUri)
-                }
-                context.startActivity(Intent.createChooser(shareIntent, "Share Soroban Calculation"))
+        // --- 4. Save and prepare share intent ---
+        val cachePath = File(context.cacheDir, "shared_images").apply { mkdirs() }
+        val imageFile = File(cachePath, "soroban_state.png")
+        FileOutputStream(imageFile).use { stream ->
+            check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)) {
+                "そろばん画像を保存できませんでした"
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        }
+        bitmap.recycle()
+
+        val contentUri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            imageFile
+        )
+        Intent(Intent.ACTION_SEND).apply {
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            setDataAndType(contentUri, "image/png")
+            putExtra(Intent.EXTRA_STREAM, contentUri)
         }
     }
 

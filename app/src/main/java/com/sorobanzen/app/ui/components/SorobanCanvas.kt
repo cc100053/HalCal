@@ -8,27 +8,26 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.dp
-import com.sorobanzen.app.ui.theme.LightAccentMoss
 import kotlinx.coroutines.launch
 
 @Composable
@@ -42,47 +41,31 @@ fun SorobanCanvas(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val view = LocalView.current
-    val scope = rememberCoroutineScope()
+    val isDark = isSystemInDarkTheme()
 
-    // We represent the animated positions of beads.
-    // For each rod, we have 1 heaven bead Y factor (0.0 = top/inactive, 1.0 = bottom/active)
-    // and 4 earth beads Y factors (0.0 = bottom/inactive, 1.0 = top/active).
-    // Let's create Animatable states for all rods to animate their values smoothly.
-    
     val heavenAnimatables = remember(rodsCount) {
         List(rodsCount) { Animatable(0f) }
     }
-    
     val earthAnimatables = remember(rodsCount) {
-        List(rodsCount) {
-            List(4) { Animatable(0f) }
-        }
+        List(rodsCount) { List(4) { Animatable(0f) } }
     }
 
-    // Synchronize animatable targets with current rod values
     LaunchedEffect(rodValues, rodsCount) {
-        for (i in 0 until rodsCount.coerceAtMost(rodValues.size)) {
-            val valForRod = rodValues[i]
-            val heavenActive = valForRod >= 5
-            val earthActiveCount = valForRod % 5
-            
-            // Animate heaven bead
-            scope.launch {
-                heavenAnimatables[i].animateTo(
-                    targetValue = if (heavenActive) 1f else 0f,
+        for (index in 0 until rodsCount.coerceAtMost(rodValues.size)) {
+            val rodValue = rodValues[index]
+            launch {
+                heavenAnimatables[index].animateTo(
+                    targetValue = if (rodValue >= 5) 1f else 0f,
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
                 )
             }
-            
-            // Animate 4 earth beads
-            for (b in 0..3) {
-                val beadActive = b < earthActiveCount
-                scope.launch {
-                    earthAnimatables[i][b].animateTo(
-                        targetValue = if (beadActive) 1f else 0f,
+            repeat(4) { beadIndex ->
+                launch {
+                    earthAnimatables[index][beadIndex].animateTo(
+                        targetValue = if (beadIndex < rodValue % 5) 1f else 0f,
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessMedium
@@ -93,80 +76,66 @@ fun SorobanCanvas(
         }
     }
 
-    // Outer frame coloring
-    val themeColor = MaterialTheme.colorScheme.primary
-    val isDark = MaterialTheme.colorScheme.background == Color(0xFF121212)
-    
-    val frameColor = if (isDark) Color(0xFF2E241E) else Color(0xFF5C4033) // Wood brown
-    val rodColor = if (isDark) Color(0xFF4A4A4A) else Color(0xFF8A8A8A)
-    val beamColor = if (isDark) Color(0xFF1E1E1E) else Color(0xFFE5E2D9)
-    val beadColorPrimary = if (isDark) Color(0xFFD3A370) else Color(0xFF8B5A2B) // Polished wood beads
-    val dotColor = if (isDark) Color(0xFFECEAE4) else Color(0xFF1E1E1E)
+    val frameLight = if (isDark) Color(0xFF5D4939) else Color(0xFF9A7452)
+    val frameMid = if (isDark) Color(0xFF3B2D24) else Color(0xFF684936)
+    val frameDark = if (isDark) Color(0xFF251D18) else Color(0xFF463025)
+    val fieldTop = if (isDark) Color(0xFF191815) else Color(0xFFF0EBDD)
+    val fieldBottom = if (isDark) Color(0xFF11110F) else Color(0xFFE3DCCB)
+    val rodColor = if (isDark) Color(0xFF777268) else Color(0xFF8B8376)
+    val beamLight = if (isDark) Color(0xFF39362F) else Color(0xFFE7E0D2)
+    val beamDark = if (isDark) Color(0xFF22211D) else Color(0xFFBDB4A3)
+    val beadColor = if (isDark) Color(0xFFC08B58) else Color(0xFF8C542F)
+    val dotColor = if (isDark) Color(0xFFE6DDCE) else Color(0xFF342F29)
+    val surroundColor = MaterialTheme.colorScheme.surfaceVariant
 
     BoxWithConstraints(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp)
+        modifier = modifier.background(surroundColor)
     ) {
-        val width = constraints.maxWidth.toFloat()
-        val height = constraints.maxHeight.toFloat()
-        
-        val rodWidth = width / rodsCount
-        
-        // Define Y coordinates
-        val frameThickness = 24f
-        val upperHeight = height * 0.25f
-        val beamHeight = 16f
-        
+        val canvasWidth = constraints.maxWidth.toFloat()
+        val canvasHeight = constraints.maxHeight.toFloat()
+        val rodWidth = canvasWidth / rodsCount
+        val frameThickness = (minOf(canvasWidth, canvasHeight) * 0.048f).coerceIn(14f, 26f)
+        val beamHeight = (canvasHeight * 0.046f).coerceIn(12f, 19f)
+        val upperHeight = canvasHeight * 0.255f
         val topY = frameThickness
         val beamTopY = topY + upperHeight
         val beamBottomY = beamTopY + beamHeight
-        val bottomY = height - frameThickness
-        
-        val beadHeight = (upperHeight - 20f) * 0.8f // size of bead
-        
-        // Function to handle touches and update rod value
+        val bottomY = canvasHeight - frameThickness
+        val lowerHeight = bottomY - beamBottomY
+        val beadHeight = minOf(
+            (upperHeight - 24f) * 0.66f,
+            (lowerHeight - 32f) / 4.55f
+        ).coerceAtLeast(12f)
+        val beadWidth = (rodWidth * 0.80f).coerceAtLeast(10f)
+
         fun handleTouch(touchX: Float, touchY: Float) {
             val rodIndex = (touchX / rodWidth).toInt().coerceIn(0, rodsCount - 1)
-            val currentVal = rodValues.getOrElse(rodIndex) { 0 }
-            
-            val heavenActive = currentVal >= 5
-            val earthActiveCount = currentVal % 5
-            
-            var newVal = currentVal
-            
+            val currentValue = rodValues.getOrElse(rodIndex) { 0 }
+            val heavenActive = currentValue >= 5
+            val earthActiveCount = currentValue % 5
+            var nextValue = currentValue
+
             if (touchY < beamTopY) {
-                // Touched heaven region
-                val midHeavenY = (topY + beamTopY) / 2
-                val targetHeavenActive = touchY > midHeavenY
-                if (heavenActive != targetHeavenActive) {
-                    newVal = (if (targetHeavenActive) 5 else 0) + earthActiveCount
+                val targetActive = touchY > (topY + beamTopY) / 2
+                if (targetActive != heavenActive) {
+                    nextValue = (if (targetActive) 5 else 0) + earthActiveCount
                 }
             } else if (touchY > beamBottomY) {
-                // Touched earth region
-                // Map the vertical height in earth region to 0-4 beads active
-                val earthRegionHeight = bottomY - beamBottomY
-                val relativeY = touchY - beamBottomY
-                val fraction = (relativeY / earthRegionHeight).coerceIn(0f, 1f)
-                
-                // If we touch close to divider, we activate more beads (e.g. 4), close to bottom we activate fewer
+                val fraction = ((touchY - beamBottomY) / lowerHeight).coerceIn(0f, 1f)
                 val targetEarthCount = when {
-                    fraction < 0.15f -> 4
+                    fraction < 0.16f -> 4
                     fraction < 0.40f -> 3
-                    fraction < 0.65f -> 2
-                    fraction < 0.85f -> 1
+                    fraction < 0.64f -> 2
+                    fraction < 0.86f -> 1
                     else -> 0
                 }
-                
-                if (earthActiveCount != targetEarthCount) {
-                    newVal = (if (heavenActive) 5 else 0) + targetEarthCount
+                if (targetEarthCount != earthActiveCount) {
+                    nextValue = (if (heavenActive) 5 else 0) + targetEarthCount
                 }
             }
-            
-            if (newVal != currentVal) {
-                onRodValueChange(rodIndex, newVal)
-                
-                // Satisfying triggers
+
+            if (nextValue != currentValue) {
+                onRodValueChange(rodIndex, nextValue)
                 if (hapticsEnabled) {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
                 }
@@ -179,110 +148,126 @@ fun SorobanCanvas(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(rodsCount) {
-                    detectTapGestures { offset ->
-                        handleTouch(offset.x, offset.y)
-                    }
+                .pointerInput(rodsCount, rodValues, soundEnabled, hapticsEnabled) {
+                    detectTapGestures { handleTouch(it.x, it.y) }
                 }
-                .pointerInput(rodsCount) {
+                .pointerInput(rodsCount, rodValues, soundEnabled, hapticsEnabled) {
                     detectDragGestures { change, _ ->
                         handleTouch(change.position.x, change.position.y)
                     }
                 }
         ) {
-            // 1. Draw frame background (shadow)
-            drawRect(
-                color = frameColor,
-                topLeft = Offset(0f, 0f),
-                size = Size(width, height)
+            val cornerRadius = CornerRadius(frameThickness * 0.72f)
+
+            // Layered wood frame.
+            drawRoundRect(
+                brush = Brush.linearGradient(
+                    colors = listOf(frameLight, frameMid, frameDark),
+                    start = Offset.Zero,
+                    end = Offset(size.width, size.height)
+                ),
+                cornerRadius = cornerRadius
             )
-            
-            // Draw inner background area (where rods are)
-            drawRect(
-                color = if (isDark) Color(0xFF181818) else Color(0xFFF4F0E6),
+            drawRoundRect(
+                color = Color.Black.copy(alpha = if (isDark) 0.28f else 0.16f),
+                topLeft = Offset(frameThickness * 0.62f, frameThickness * 0.68f),
+                size = Size(
+                    size.width - frameThickness * 1.24f,
+                    size.height - frameThickness * 1.36f
+                ),
+                cornerRadius = CornerRadius(frameThickness * 0.35f),
+                style = Stroke(width = 2f)
+            )
+
+            // Recessed paper field.
+            drawRoundRect(
+                brush = Brush.verticalGradient(listOf(fieldTop, fieldBottom)),
                 topLeft = Offset(frameThickness, frameThickness),
-                size = Size(width - frameThickness * 2, height - frameThickness * 2)
+                size = Size(
+                    size.width - frameThickness * 2,
+                    size.height - frameThickness * 2
+                ),
+                cornerRadius = CornerRadius(frameThickness * 0.26f)
             )
-            
-            // 2. Draw Rods
-            for (i in 0 until rodsCount) {
-                val rodX = rodWidth * i + rodWidth / 2
+
+            repeat(rodsCount) { index ->
+                val rodX = rodWidth * index + rodWidth / 2
+                drawLine(
+                    color = Color.Black.copy(alpha = 0.18f),
+                    start = Offset(rodX + 1.6f, frameThickness),
+                    end = Offset(rodX + 1.6f, size.height - frameThickness),
+                    strokeWidth = 5f
+                )
                 drawLine(
                     color = rodColor,
                     start = Offset(rodX, frameThickness),
-                    end = Offset(rodX, height - frameThickness),
-                    strokeWidth = 6f
+                    end = Offset(rodX, size.height - frameThickness),
+                    strokeWidth = 3.3f
+                )
+                drawLine(
+                    color = Color.White.copy(alpha = if (isDark) 0.08f else 0.28f),
+                    start = Offset(rodX - 0.8f, frameThickness),
+                    end = Offset(rodX - 0.8f, size.height - frameThickness),
+                    strokeWidth = 0.9f
                 )
             }
-            
-            // 3. Draw Divider Beam (Horizontal)
+
             drawRect(
-                color = beamColor,
+                brush = Brush.verticalGradient(listOf(beamLight, beamDark)),
                 topLeft = Offset(frameThickness, beamTopY),
-                size = Size(width - frameThickness * 2, beamHeight)
+                size = Size(size.width - frameThickness * 2, beamHeight)
             )
-            
-            // 4. Draw Traditional Alignment Dots (index points)
-            // On standard 13-rod abacus, dots are placed on every 3rd or 4th rod
-            // E.g., for 13 rods, let's place dots on rods 2, 6, 10
-            for (i in 0 until rodsCount) {
-                if ((rodsCount - 1 - i) % 4 == 3) {
-                    val dotX = rodWidth * i + rodWidth / 2
-                    val dotY = beamTopY + beamHeight / 2
+            drawLine(
+                color = Color.White.copy(alpha = if (isDark) 0.08f else 0.36f),
+                start = Offset(frameThickness, beamTopY + 1f),
+                end = Offset(size.width - frameThickness, beamTopY + 1f),
+                strokeWidth = 1.4f
+            )
+
+            repeat(rodsCount) { index ->
+                if ((rodsCount - 1 - index) % 4 == 3) {
                     drawCircle(
                         color = dotColor,
-                        radius = 4f,
-                        center = Offset(dotX, dotY)
+                        radius = (beamHeight * 0.20f).coerceAtLeast(2.5f),
+                        center = Offset(
+                            x = rodWidth * index + rodWidth / 2,
+                            y = beamTopY + beamHeight / 2
+                        )
                     )
                 }
             }
-            
-            // 5. Draw Beads
-            val beadW = rodWidth * 0.85f
-            
-            for (i in 0 until rodsCount) {
-                val rodX = rodWidth * i + rodWidth / 2
-                
-                // --- Draw Heaven Bead ---
-                // Animated factor ranges from 0f (top) to 1f (divider)
-                val heavenFactor = heavenAnimatables[i].value
-                val minHeavenY = topY + beadHeight / 2 + 10f
-                val maxHeavenY = beamTopY - beadHeight / 2 - 8f
+
+            repeat(rodsCount) { index ->
+                val rodX = rodWidth * index + rodWidth / 2
+                val heavenFactor = heavenAnimatables[index].value
+                val minHeavenY = topY + beadHeight / 2 + 8f
+                val maxHeavenY = beamTopY - beadHeight / 2 - 7f
                 val heavenY = minHeavenY + (maxHeavenY - minHeavenY) * heavenFactor
-                
+
                 drawSorobanBead(
                     centerX = rodX,
                     centerY = heavenY,
-                    beadWidth = beadW,
+                    beadWidth = beadWidth,
                     beadHeight = beadHeight,
-                    color = beadColorPrimary
+                    color = beadColor,
+                    dark = isDark
                 )
-                
-                // --- Draw Earth Beads ---
-                // Animated factor for each of 4 earth beads: 0f (bottom/inactive) to 1f (top/active)
-                val earthFactors = earthAnimatables[i]
-                
-                for (b in 0..3) {
-                    val factor = earthFactors[b].value
-                    
-                    // Positions if active (resting up near divider):
-                    // Bead 0 (top-most): close to divider
-                    // Bead 3 (bottom-most): further down
-                    val activeY = beamBottomY + beadHeight / 2 + 8f + (b * (beadHeight + 4f))
-                    
-                    // Positions if inactive (resting down at bottom):
-                    // Bead 3 (bottom-most): close to frame
-                    // Bead 0 (top-most): higher up
-                    val inactiveY = bottomY - beadHeight / 2 - 8f - ((3 - b) * (beadHeight + 4f))
-                    
+
+                repeat(4) { beadIndex ->
+                    val factor = earthAnimatables[index][beadIndex].value
+                    val activeY = beamBottomY + beadHeight / 2 + 7f +
+                        beadIndex * (beadHeight + 3.5f)
+                    val inactiveY = bottomY - beadHeight / 2 - 7f -
+                        (3 - beadIndex) * (beadHeight + 3.5f)
                     val beadY = inactiveY + (activeY - inactiveY) * factor
-                    
+
                     drawSorobanBead(
                         centerX = rodX,
                         centerY = beadY,
-                        beadWidth = beadW,
+                        beadWidth = beadWidth,
                         beadHeight = beadHeight,
-                        color = beadColorPrimary
+                        color = beadColor,
+                        dark = isDark
                     )
                 }
             }
@@ -290,52 +275,60 @@ fun SorobanCanvas(
     }
 }
 
-/**
- * Draws a traditional bi-conical Soroban bead (soroban-dama).
- * It resembles two cones joined at their bases, looking like a diamond with a flat sharp horizontal edge.
- */
 private fun DrawScope.drawSorobanBead(
     centerX: Float,
     centerY: Float,
     beadWidth: Float,
     beadHeight: Float,
-    color: Color
+    color: Color,
+    dark: Boolean
 ) {
+    fun beadPath(yOffset: Float = 0f) = Path().apply {
+        val left = centerX - beadWidth / 2
+        val right = centerX + beadWidth / 2
+        val top = centerY - beadHeight / 2 + yOffset
+        val bottom = centerY + beadHeight / 2 + yOffset
+        val middle = centerY + yOffset
+        moveTo(centerX, top)
+        lineTo(right, middle - beadHeight * 0.11f)
+        lineTo(right, middle + beadHeight * 0.11f)
+        lineTo(centerX, bottom)
+        lineTo(left, middle + beadHeight * 0.11f)
+        lineTo(left, middle - beadHeight * 0.11f)
+        close()
+    }
+
     val left = centerX - beadWidth / 2
     val right = centerX + beadWidth / 2
     val top = centerY - beadHeight / 2
     val bottom = centerY + beadHeight / 2
-    val midY = centerY
-    
-    // Draw diamond path
-    val path = Path().apply {
-        moveTo(centerX, top) // Top point
-        lineTo(right, midY - beadHeight * 0.1f) // Join base right upper
-        lineTo(right, midY + beadHeight * 0.1f) // Join base right lower (slight thickness)
-        lineTo(centerX, bottom) // Bottom point
-        lineTo(left, midY + beadHeight * 0.1f) // Join base left lower
-        lineTo(left, midY - beadHeight * 0.1f) // Join base left upper
-        close()
-    }
-    
-    // Gradient brush for realistic wood polish
-    val brush = Brush.linearGradient(
-        colors = listOf(
-            color.copy(alpha = 0.9f),
-            color,
-            color.copy(alpha = 0.6f)
-        ),
-        start = Offset(left, top),
-        end = Offset(right, bottom)
+
+    drawPath(
+        path = beadPath(yOffset = 2.2f),
+        color = Color.Black.copy(alpha = if (dark) 0.38f else 0.25f)
     )
-    
-    drawPath(path = path, brush = brush)
-    
-    // Inner shadow highlight line
+    drawPath(
+        path = beadPath(),
+        brush = Brush.linearGradient(
+            colors = listOf(
+                color.copy(red = (color.red + 0.16f).coerceAtMost(1f)),
+                color,
+                color.copy(red = color.red * 0.72f, green = color.green * 0.72f, blue = color.blue * 0.72f)
+            ),
+            start = Offset(left, top),
+            end = Offset(right, bottom)
+        )
+    )
     drawLine(
-        color = Color.White.copy(alpha = 0.15f),
-        start = Offset(left, midY),
-        end = Offset(right, midY),
-        strokeWidth = 2f
+        color = Color.White.copy(alpha = if (dark) 0.16f else 0.22f),
+        start = Offset(left + beadWidth * 0.14f, centerY - 1f),
+        end = Offset(right - beadWidth * 0.14f, centerY - 1f),
+        strokeWidth = 1.3f
+    )
+    drawLine(
+        color = Color.Black.copy(alpha = 0.18f),
+        start = Offset(left + beadWidth * 0.18f, centerY + beadHeight * 0.08f),
+        end = Offset(right - beadWidth * 0.18f, centerY + beadHeight * 0.08f),
+        strokeWidth = 1f
     )
 }

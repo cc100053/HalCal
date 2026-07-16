@@ -1,7 +1,5 @@
 package com.sorobanzen.app.domain
 
-import kotlin.math.pow
-
 object SorobanEngine {
 
     /**
@@ -95,101 +93,4 @@ object SorobanEngine {
         }
     }
 
-    /**
-     * Converts a Long number to its Romaji reading.
-     */
-    fun convertToRomaji(number: Long): String {
-        if (number == 0L) return "zero"
-        
-        val isNegative = number < 0
-        val absNum = if (isNegative) -number else number
-        
-        val units = listOf("", "man", "oku", "chō", "kei")
-        var temp = absNum
-        var unitIndex = 0
-        val parts = mutableListOf<String>()
-        
-        while (temp > 0) {
-            val part = (temp % 10000).toInt()
-            if (part > 0) {
-                val partRomaji = convertPartToRomaji(part, unitIndex > 0)
-                val unitLabel = units[unitIndex]
-                if (unitLabel.isNotEmpty()) {
-                    parts.add(0, "$partRomaji $unitLabel")
-                } else {
-                    parts.add(0, partRomaji)
-                }
-            }
-            temp /= 10000
-            unitIndex++
-        }
-        
-        val romajiResult = parts.joinToString(" ")
-        return if (isNegative) "mainasu $romajiResult" else romajiResult
-    }
-
-    private fun convertPartToRomaji(num: Int, forceIchi: Boolean): String {
-        val thousands = num / 1000
-        val hundreds = (num % 1000) / 100
-        val tens = (num % 100) / 10
-        val units = num % 10
-        
-        val parts = mutableListOf<String>()
-        
-        if (thousands > 0) {
-            val thWord = when (thousands) {
-                1 -> "sen"
-                3 -> "sanzen"
-                8 -> "hassen"
-                else -> convertDigitRomaji(thousands) + "sen"
-            }
-            parts.add(thWord)
-        }
-        
-        if (hundreds > 0) {
-            val hWord = when (hundreds) {
-                1 -> "hyaku"
-                3 -> "sanbyaku"
-                6 -> "roppyaku"
-                8 -> "happyaku"
-                else -> convertDigitRomaji(hundreds) + "hyaku"
-            }
-            parts.add(hWord)
-        }
-        
-        if (tens > 0) {
-            val tWord = when (tens) {
-                1 -> "jū"
-                else -> convertDigitRomaji(tens) + "jū"
-            }
-            parts.add(tWord)
-        }
-        
-        if (units > 0) {
-            if (!(units == 1 && num == 1 && !forceIchi)) {
-                parts.add(convertDigitRomaji(units))
-            } else {
-                parts.add("ichi")
-            }
-        } else if (num == 1 && forceIchi) {
-            parts.add("ichi")
-        }
-        
-        return parts.joinToString(" ")
-    }
-
-    private fun convertDigitRomaji(digit: Int): String {
-        return when (digit) {
-            1 -> "ichi"
-            2 -> "ni"
-            3 -> "san"
-            4 -> "yon"
-            5 -> "go"
-            6 -> "roku"
-            7 -> "nana"
-            8 -> "hachi"
-            9 -> "kyū"
-            else -> ""
-        }
-    }
 }

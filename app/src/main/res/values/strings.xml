@@ -1,89 +1,136 @@
 <resources>
-    <string name="app_name">Soroban Zen</string>
-    
-    <!-- General -->
-    <string name="calculator">Calculator</string>
-    <string name="soroban">Soroban</string>
-    <string name="settings">Settings</string>
-    <string name="history">History</string>
-    
-    <!-- Calculator Mode -->
-    <string name="tax">Tax</string>
-    <string name="clear">C</string>
-    <string name="all_clear">AC</string>
-    <string name="result">Result</string>
-    <string name="expression">Expression</string>
-    
-    <!-- Tax Mode -->
-    <string name="tax_calculator">Consumption Tax</string>
-    <string name="tax_rate_standard">Standard Tax (10%)</string>
-    <string name="tax_rate_reduced">Reduced Tax (8%)</string>
-    <string name="amount_excl_tax">Excluding Tax</string>
-    <string name="amount_incl_tax">Including Tax</string>
-    <string name="tax_amount">Tax Amount</string>
-    <string name="add_tax">Add Tax</string>
-    <string name="remove_tax">Remove Tax</string>
-    <string name="standard_label">Standard (10%)</string>
-    <string name="reduced_label">Reduced (8%)</string>
-    
-    <!-- Traditional Japanese Units -->
-    <string name="unit_converter">Japanese Units</string>
-    <string name="traditional_units">Traditional Units</string>
-    <string name="length">Length</string>
-    <string name="area">Area</string>
-    <string name="volume">Volume</string>
-    <string name="weight">Weight</string>
-    
-    <!-- Unit names -->
-    <string name="shaku">Shaku (尺)</string>
-    <string name="sun">Sun (寸)</string>
-    <string name="ken">Ken (間)</string>
-    <string name="tsubo">Tsubo (坪)</string>
-    <string name="sho">Sho (升)</string>
-    <string name="go">Go (合)</string>
-    <string name="kan">Kan (貫)</string>
-    <string name="momme">Momme (匁)</string>
-    
-    <!-- Tatami Planner -->
-    <string name="tatami_planner">Tatami Planner</string>
-    <string name="room_dimensions">Room Dimensions (m)</string>
-    <string name="width">Width</string>
-    <string name="length_label">Length</string>
-    <string name="region">Region</string>
-    <string name="kyoto_kyouma">Kyoto (Kyouma - 1.91m x 0.955m)</string>
-    <string name="nagoya_ainoma">Nagoya (Ainoma - 1.82m x 0.91m)</string>
-    <string name="tokyo_edoma">Tokyo (Edoma - 1.76m x 0.88m)</string>
-    <string name="mats_needed">Tatami Mats Needed: %.2f</string>
-    <string name="layout_suggestion">Suggested Mat Arrangement</string>
-    
-    <!-- Soroban Details -->
-    <string name="clear_beads">Clear Abacus</string>
-    <string name="shake_to_clear">Shake device to clear</string>
-    <string name="rod_value">Rod value: 10^%1$d (%2$s)</string>
-    
-    <!-- Practice Mode -->
-    <string name="practice_mode">Practice Mode</string>
-    <string name="start_practice">Start Training</string>
-    <string name="stop_practice">Stop</string>
-    <string name="correct">Correct!</string>
-    <string name="incorrect">Wrong! Answer is %1$s</string>
-    <string name="score">Score: %1$d / %2$d</string>
-    <string name="time_left">Time: %1$ds</string>
-    
-    <!-- Settings -->
-    <string name="rods_count">Number of Rods</string>
-    <string name="sound_effects">Bead Sound Effects</string>
-    <string name="haptics">Haptic Feedback</string>
-    <string name="dark_mode">Dark Mode</string>
-    <string name="japanese_readout">Japanese Number TTS Readout</string>
-    <string name="language">Language / 言語</string>
-    
-    <!-- History -->
-    <string name="no_history">No calculation history yet</string>
-    <string name="history_cleared">History cleared</string>
-    <string name="clear_history">Clear History</string>
-    
-    <!-- Share -->
-    <string name="share">Share State</string>
-    <string name="share_title">Share Calculation</string>
+    <string name="app_name">そろばん禅</string>
+
+    <!-- 全般 -->
+    <string name="calculator">電卓</string>
+    <string name="soroban">そろばん</string>
+    <string name="settings">設定</string>
+    <string name="history">計算履歴</string>
+    <string name="brand_name">そろばん禅</string>
+    <string name="back">戻る</string>
+    <string name="close">閉じる</string>
+    <string name="cancel">キャンセル</string>
+    <string name="delete">削除</string>
+
+    <!-- 電卓 -->
+    <string name="tax">消費税</string>
+    <string name="clear">一字</string>
+    <string name="all_clear">全消</string>
+    <string name="result">計算結果</string>
+    <string name="expression">数式</string>
+    <string name="calculator_eyebrow">日々の計算</string>
+
+    <!-- 消費税 -->
+    <string name="tax_calculator">消費税計算</string>
+    <string name="amount">金額</string>
+    <string name="tax_rate_standard">標準税率（10%）</string>
+    <string name="tax_rate_reduced">軽減税率（8%）</string>
+    <string name="amount_excl_tax">税抜金額</string>
+    <string name="amount_incl_tax">税込金額</string>
+    <string name="tax_amount">消費税額</string>
+    <string name="add_tax">税込にする</string>
+    <string name="remove_tax">税抜にする</string>
+    <string name="standard_label">標準（10%）</string>
+    <string name="reduced_label">軽減（8%）</string>
+    <string name="daily_tools_eyebrow">暮らしの道具</string>
+    <string name="tax_subtitle">税込・税抜の金額を、迷わずすばやく計算します。</string>
+    <string name="tax_rate">税率</string>
+    <string name="valid_amount_error">0以上の正しい金額を入力してください。</string>
+    <string name="breakdown">計算明細</string>
+    <string name="tax_hint">金額と税率を選び、計算したい価格を押してください。</string>
+
+    <!-- 尺貫法 -->
+    <string name="unit_converter">尺貫法変換</string>
+    <string name="traditional_units">伝統的単位（尺貫法）</string>
+    <string name="traditional_units_short">単位</string>
+    <string name="length">長さ</string>
+    <string name="area">面積</string>
+    <string name="volume">体積</string>
+    <string name="weight">重さ</string>
+    <string name="cultural_tools_eyebrow">日本のものさし</string>
+    <string name="units_subtitle">メートル法の値を、昔ながらの日本の単位に換算します。</string>
+    <string name="metric_meters">メートル（m）</string>
+    <string name="metric_square_meters">平方メートル（m²）</string>
+    <string name="metric_liters">リットル（L）</string>
+    <string name="metric_kilograms">キログラム（kg）</string>
+    <string name="metric_value">メートル法の値</string>
+    <string name="converted_units">換算結果</string>
+    <string name="conversion_prompt">0以上の値を入力すると、伝統的な単位での値が表示されます。</string>
+
+    <!-- 単位名 -->
+    <string name="shaku">尺（しゃく）</string>
+    <string name="sun">寸（すん）</string>
+    <string name="ken">間（けん）</string>
+    <string name="tsubo">坪（つぼ）</string>
+    <string name="sho">升（しょう）</string>
+    <string name="go">合（ごう）</string>
+    <string name="kan">貫（かん）</string>
+    <string name="momme">匁（もんめ）</string>
+    <string name="jo">畳（じょう）</string>
+
+    <!-- そろばん -->
+    <string name="clear_beads">そろばんを払う</string>
+    <string name="shake_to_clear">端末を振ってリセット</string>
+    <string name="rod_value">桁の重み：10^%1$d（%2$s）</string>
+    <string name="read_aloud">読み上げ</string>
+    <string name="guide">使い方</string>
+    <string name="soroban_guide_title">そろばんの読み方</string>
+    <string name="soroban_guide_heaven">1. 五玉（天珠）：上にある1つの珠です。梁へ下げると「5」を表します。</string>
+    <string name="soroban_guide_earth">2. 一玉（地珠）：下にある4つの珠です。梁へ上げた珠がそれぞれ「1」を表します。</string>
+    <string name="soroban_guide_dots">3. 定位点：梁にある小さな点で、桁をまとめる目印になります。</string>
+    <string name="soroban_guide_value">4. 桁の値：梁に寄せた珠だけを合計し、0から9の数字として読みます。</string>
+
+    <!-- 暗算練習 -->
+    <string name="practice_mode">暗算練習</string>
+    <string name="practice_short">練習</string>
+    <string name="start_practice">練習開始</string>
+    <string name="stop_practice">終了</string>
+    <string name="correct">正解！</string>
+    <string name="incorrect">不正解！ 正解は %1$s</string>
+    <string name="score">正解数：%1$d / %2$d</string>
+    <string name="time_left">残り時間：%1$d秒</string>
+    <string name="practice_eyebrow">暗算稽古</string>
+    <string name="practice_subtitle">一分の集中を重ね、速さと確かな数のイメージを育てます。</string>
+    <string name="practice_intro_title">静かな一分、数と向き合う</string>
+    <string name="practice_intro_body">60秒で足し算と引き算に挑戦します。急ぐよりも、頭の中のそろばんを丁寧に動かして正確さを意識しましょう。</string>
+    <string name="score_label">正解数</string>
+    <string name="time_label">残り時間</string>
+    <string name="seconds_short">%1$d秒</string>
+    <string name="current_problem">現在の問題</string>
+    <string name="answer">答え</string>
+    <string name="submit">送信</string>
+
+    <!-- 設定 -->
+    <string name="rods_count">そろばんの桁数</string>
+    <string name="sound_effects">珠の打撃音</string>
+    <string name="haptics">触覚フィードバック（振動）</string>
+    <string name="dark_mode">ダークモード</string>
+    <string name="japanese_readout">日本語数値の音声読み上げ</string>
+    <string name="preferences_eyebrow">環境設定</string>
+    <string name="settings_subtitle">静けさを保ちながら、手触りを自分好みに整えます。</string>
+    <string name="soroban_setup">そろばんの設定</string>
+    <string name="rods_description">横画面で使うそろばんの桁数を選びます。</string>
+    <plurals name="rods_value">
+        <item quantity="other">%1$d桁</item>
+    </plurals>
+    <string name="interaction_settings">操作感</string>
+    <string name="sound_effects_description">珠を動かすたび、控えめな打撃音を鳴らします。</string>
+    <string name="haptics_description">ボタンや珠の操作を、穏やかな振動で伝えます。</string>
+    <string name="tts_description">現在の数値を日本語で読み上げます。</string>
+    <string name="system_theme_note">外観は端末のライト／ダーク設定に合わせて切り替わります。</string>
+
+    <!-- 履歴 -->
+    <string name="no_history">履歴はありません</string>
+    <string name="history_cleared">履歴を削除しました</string>
+    <string name="clear_history">履歴クリア</string>
+    <string name="archive_eyebrow">計算の記録</string>
+    <string name="history_subtitle">結果をタップすると電卓へ戻せます。</string>
+    <string name="clear_history_confirmation">保存した計算をすべて削除しますか？ この操作は取り消せません。</string>
+    <string name="history_mode_calculation">通常計算</string>
+    <string name="history_mode_tax">消費税計算</string>
+
+    <!-- 共有 -->
+    <string name="share">状態を共有</string>
+    <string name="share_title">計算の共有</string>
+    <string name="share_failed">共有画像を作成できませんでした</string>
 </resources>
