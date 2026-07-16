@@ -22,8 +22,8 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 - **Satisfying Interaction**: Custom canvas rendering of bi-conical beads (*soroban-dama*) with drag-and-slide gestures, haptic pops, and spring-snapping physics.
 - **Real-Time Reading**: Displays the numerical value alongside its Japanese Kanji reading (e.g., `十二万三千四百五十六`).
 - **Text-to-Speech (TTS)**: Built-in voice synthesizer that speaks out numbers in native Japanese pronunciation.
-- **Shake to Reset**: Integrates Android's accelerometer; physically shaking the device triggers a satisfying clear-all animation and haptic vibration.
-- **Abacus Sharing**: Automatically generates an off-screen bitmap/image card of the abacus's current state (showing beads, numbers, readings, and a signature watermark) and opens the Android sharing sheet.
+- **Shake to Reset**: Integrates Android's accelerometer; shaking or using the clear control resets the frame with an immediate undo action.
+- **Abacus Sharing**: Generates a fitted off-screen image card of the current state, prevents duplicate share jobs, and opens the Android sharing sheet.
 
 ### 2. Normal Calculator Mode (Portrait)
 - Quiet-luxury display hierarchy with a centered ensō wordmark and warm, rounded tactile keys.
@@ -34,7 +34,7 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 ### 3. Traditional Japanese Tools
 - **Consumption Tax Calculator**: Handles standard (10%) and reduced (8% for food/essentials) tax rates with detailed tax breakdowns.
 - **Traditional Unit Converter**: Converts metric units to/from length (shaku, sun, ken), area (tsubo, jo), volume (sho, go), and weight (kan, momme) with high accuracy.
-- **Practice / Training Mode**: An educational mental math arithmetic test with a 60-second countdown timer and score tracking.
+- **Practice / Training Mode**: A 60-second mental-math session with immediate answer focus, guarded submissions, and a persistent score/accuracy summary when the session ends.
 
 ---
 

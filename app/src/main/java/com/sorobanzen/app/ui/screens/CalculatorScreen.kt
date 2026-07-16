@@ -192,7 +192,12 @@ fun CalculatorScreen(
 
         if (activeToolSheet != null) {
             ModalBottomSheet(
-                onDismissRequest = { activeToolSheet = null },
+                onDismissRequest = {
+                    if (activeToolSheet == "practice") {
+                        viewModel.stopPractice()
+                    }
+                    activeToolSheet = null
+                },
                 sheetState = sheetState,
                 shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp),
                 containerColor = MaterialTheme.colorScheme.surface,

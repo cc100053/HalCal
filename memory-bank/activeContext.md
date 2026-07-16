@@ -10,6 +10,10 @@ The branch is `main`. The current implementation includes:
 - JVM coverage for calculator, parser, practice, soroban Kanji readings, tax, and unit conversion.
 - Persistent rod-count, sound, haptic, and Japanese TTS preferences.
 - Safer calculator operator/history behavior, practice submission locking, tax validation, share failure handling, and sensor/share lifecycle fixes.
+- Calculator repeat-equals/no-op handling, capped readable input, and rejection of non-finite loaded results.
+- Practice answer auto-focus, explicit ready/active/finished phases, race-safe timer stopping, capped answer input, and a retained score/accuracy result screen.
+- Soroban clear undo, single-flight share generation, fitted share-card text, live canvas accessibility descriptions, and disabled unavailable actions.
+- Native Android Back handling in settings, full-row accessible settings toggles, rounded rod slider values, and current edge-to-edge system-bar handling.
 - Tatami planner domain/UI removed; the approximate `畳` area conversion remains.
 - A cohesive premium UI across calculator, tool sheets, practice, settings, history, and landscape soroban: refined light/dark palettes, serif/sans type hierarchy, procedural washi texture and ensō mark, shared card/pill/metric components, responsive safe-area handling, and a layered wooden Canvas soroban.
 - A Japanese-only product interface. Default Android resources, accessibility descriptions, dates, history labels, errors, Kanji readings, and generated share cards are Japanese on every device locale. English resources and Romaji output have been removed.
@@ -18,7 +22,8 @@ The branch is `main`. The current implementation includes:
 
 ## Last verification
 
-- `./gradlew test assembleDebug lint` — **passed** on 2026-07-16.
+- `./gradlew test assembleDebug lint` — **passed** on 2026-07-16 after the UX/stability polish pass.
+- Emulator verification on 2026-07-16 covered practice keyboard focus and scored results, settings system-Back behavior, soroban clear/undo restoration, live accessibility descriptions, share-card creation and chooser launch, and light/dark system-bar rendering.
 - Source audit found no user-visible English or Romaji literals.
 - Emulator visual verification completed on 2026-07-16 using an API 36 Pixel 7 AVD with the device locale set to `en-US`. The calculator still rendered Japanese-only labels, including the new `全消` and `一字` keys, without clipping.
 - Earlier emulator checks on API 35/36 covered portrait and landscape, light and dark modes, calculator, tax sheet, settings, responsive tablet keypad, safe drawing insets, and soroban rendering.
@@ -29,7 +34,7 @@ The branch is `main`. The current implementation includes:
 - Do not restore the deleted Tatami planner unless the user explicitly requests it.
 - Keep calculator semantics in `CalculatorEngine` and practice submission rules in `PracticeSession`.
 - Keep the interface Japanese-only; mathematical and international measurement symbols are the only intended Latin-symbol exceptions.
-- Build currently emits the AGP/SDK compatibility warning and deprecated system-bar API warnings documented in `techContext.md`.
+- Build currently emits the AGP/SDK compatibility warning documented in `techContext.md`.
 - A test run may need permission to access the user's Gradle cache outside the repository sandbox.
 
 ## Likely next engineering opportunities

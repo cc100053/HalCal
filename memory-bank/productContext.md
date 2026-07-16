@@ -27,6 +27,8 @@ The device orientation is the top-level mode selector:
 - Rods are ordered most-significant to least-significant from left to right.
 - Japanese readings use four-digit Kanji units (`万`, `億`, `兆`, `京`). Romaji is intentionally not generated or shown.
 - Sharing renders a fixed 1200×750 warm-paper PNG in the app cache, exposes it through `FileProvider`, and launches the Android chooser.
+- Clearing from the button or shake gesture offers a short undo action that restores the complete prior rod state.
+- Share generation is single-flight and fits long numeric/Kanji readings within the generated card.
 
 ### Tax
 
@@ -49,6 +51,8 @@ The device orientation is the top-level mode selector:
 - Problems randomly use addition or subtraction with operands from 1 through 99.
 - Subtraction is ordered so the answer is non-negative.
 - Each problem accepts one submission, shows feedback, locks input for 1.2 seconds, then advances while the session remains active.
+- Starting or advancing focuses the answer field and opens the numeric keyboard.
+- Stopping or reaching zero seconds retains a score and accuracy result screen; dismissing or rotating away ends an active session cleanly.
 
 ## Design language
 

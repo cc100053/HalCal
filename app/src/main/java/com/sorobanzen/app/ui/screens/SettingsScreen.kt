@@ -1,5 +1,7 @@
 package com.sorobanzen.app.ui.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -32,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sorobanzen.app.R
@@ -39,6 +42,7 @@ import com.sorobanzen.app.ui.components.ZenBackground
 import com.sorobanzen.app.ui.components.ZenCard
 import com.sorobanzen.app.ui.components.ZenScreenHeader
 import com.sorobanzen.app.viewmodel.ZenViewModel
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
@@ -50,6 +54,8 @@ fun SettingsScreen(
     val soundEffects by viewModel.soundEffectsEnabled.collectAsState()
     val haptics by viewModel.hapticEnabled.collectAsState()
     val ttsEnabled by viewModel.ttsEnabled.collectAsState()
+
+    BackHandler(onBack = onBack)
 
     ZenBackground(modifier = modifier.fillMaxSize()) {
         Column(
@@ -120,7 +126,12 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(14.dp))
                 Slider(
                     value = rodsCount.toFloat(),
-                    onValueChange = { viewModel.setRodsCount(it.toInt()) },
+                    onValueChange = { value ->
+                        val roundedValue = value.roundToInt()
+                        if (roundedValue != rodsCount) {
+                            viewModel.setRodsCount(roundedValue)
+                        }
+                    },
                     valueRange = 7f..17f,
                     steps = 9,
                     colors = SliderDefaults.colors(
@@ -194,6 +205,11 @@ fun SettingsToggleRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onCheckedChange
+            )
             .padding(vertical = 13.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -217,7 +233,7 @@ fun SettingsToggleRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                 checkedTrackColor = MaterialTheme.colorScheme.primary,

@@ -79,6 +79,9 @@
     <string name="soroban_guide_earth">2. 一玉（地珠）：下にある4つの珠です。梁へ上げた珠がそれぞれ「1」を表します。</string>
     <string name="soroban_guide_dots">3. 定位点：梁にある小さな点で、桁をまとめる目印になります。</string>
     <string name="soroban_guide_value">4. 桁の値：梁に寄せた珠だけを合計し、0から9の数字として読みます。</string>
+    <string name="soroban_canvas_description">そろばん。現在の値は%1$sです。珠をタップまたはドラッグして動かします。</string>
+    <string name="soroban_cleared">そろばんを払いました</string>
+    <string name="undo">元に戻す</string>
 
     <!-- 暗算練習 -->
     <string name="practice_mode">暗算練習</string>
@@ -99,6 +102,10 @@
     <string name="current_problem">現在の問題</string>
     <string name="answer">答え</string>
     <string name="submit">送信</string>
+    <string name="practice_result_title">練習結果</string>
+    <string name="practice_result_body">今日の手応えを確かめて、次の一分につなげましょう。</string>
+    <string name="accuracy_label">正答率</string>
+    <string name="practice_again">もう一度挑戦</string>
 
     <!-- 設定 -->
     <string name="rods_count">そろばんの桁数</string>
@@ -131,6 +138,7 @@
 
     <!-- 共有 -->
     <string name="share">状態を共有</string>
+    <string name="sharing">作成中</string>
     <string name="share_title">計算の共有</string>
     <string name="share_failed">共有画像を作成できませんでした</string>
 </resources>

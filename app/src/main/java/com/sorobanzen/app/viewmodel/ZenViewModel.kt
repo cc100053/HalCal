@@ -8,6 +8,7 @@ import com.sorobanzen.app.data.HistoryDao
 import com.sorobanzen.app.data.HistoryEntity
 import com.sorobanzen.app.domain.CalculatorEngine
 import com.sorobanzen.app.domain.PracticeSession
+import com.sorobanzen.app.domain.PracticeSubmission
 import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.domain.TaxCalculator
 import kotlinx.coroutines.Job
@@ -21,6 +22,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import kotlin.random.Random
+
+enum class PracticePhase {
+    READY,
+    ACTIVE,
+    FINISHED
+}
 
 class ZenViewModel(
     private val historyDao: HistoryDao,
@@ -81,8 +88,8 @@ class ZenViewModel(
     val metricValue: StateFlow<String> = _metricValue.asStateFlow()
 
     // --- Practice/Training Mode States ---
-    private val _isPracticeActive = MutableStateFlow(false)
-    val isPracticeActive: StateFlow<Boolean> = _isPracticeActive.asStateFlow()
+    private val _practicePhase = MutableStateFlow(PracticePhase.READY)
+    val practicePhase: StateFlow<PracticePhase> = _practicePhase.asStateFlow()
 
     private val _practiceTimeLeft = MutableStateFlow(60)
     val practiceTimeLeft: StateFlow<Int> = _practiceTimeLeft.asStateFlow()
@@ -99,8 +106,8 @@ class ZenViewModel(
     private val _practiceInput = MutableStateFlow("")
     val practiceInput: StateFlow<String> = _practiceInput.asStateFlow()
 
-    private val _practiceFeedback = MutableStateFlow("")
-    val practiceFeedback: StateFlow<String> = _practiceFeedback.asStateFlow()
+    private val _practiceFeedback = MutableStateFlow<PracticeSubmission?>(null)
+    val practiceFeedback: StateFlow<PracticeSubmission?> = _practiceFeedback.asStateFlow()
 
     private val _isPracticeAnswerLocked = MutableStateFlow(false)
     val isPracticeAnswerLocked: StateFlow<Boolean> = _isPracticeAnswerLocked.asStateFlow()
@@ -162,6 +169,14 @@ class ZenViewModel(
     fun clearSoroban() {
         _rodValues.value = IntArray(_rodsCount.value)
         _sorobanValue.value = 0L
+    }
+
+    fun restoreSoroban(values: IntArray) {
+        if (values.size != _rodsCount.value) return
+        _rodValues.value = values.copyOf().also { rods ->
+            rods.indices.forEach { index -> rods[index] = rods[index].coerceIn(0, 9) }
+        }
+        updateSorobanValueFromRods()
     }
 
     fun loadNumberToSoroban(num: Long) {
@@ -289,12 +304,12 @@ class ZenViewModel(
     // --- Practice/Training Mode Logic ---
     fun startPractice() {
         nextProblemJob?.cancel()
-        _isPracticeActive.value = true
+        _practicePhase.value = PracticePhase.ACTIVE
         _practiceScore.value = 0
         _practiceTotal.value = 0
         _practiceTimeLeft.value = 60
         _practiceInput.value = ""
-        _practiceFeedback.value = ""
+        _practiceFeedback.value = null
         _isPracticeAnswerLocked.value = false
         val firstProblem = createProblem()
         practiceSession.start(firstProblem.first, firstProblem.second)
@@ -302,23 +317,19 @@ class ZenViewModel(
         
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
-            while (_practiceTimeLeft.value > 0 && _isPracticeActive.value) {
+            while (_practiceTimeLeft.value > 0) {
                 delay(1000)
-                _practiceTimeLeft.value -= 1
+                if (_practicePhase.value != PracticePhase.ACTIVE) return@launch
+                _practiceTimeLeft.value = (_practiceTimeLeft.value - 1).coerceAtLeast(0)
             }
-            _isPracticeActive.value = false
-            _isPracticeAnswerLocked.value = false
-            practiceSession.stop()
-            nextProblemJob?.cancel()
+            finishPractice()
         }
     }
 
     fun stopPractice() {
-        _isPracticeActive.value = false
-        _isPracticeAnswerLocked.value = false
+        if (_practicePhase.value != PracticePhase.ACTIVE) return
         timerJob?.cancel()
-        nextProblemJob?.cancel()
-        practiceSession.stop()
+        finishPractice()
     }
 
     fun submitPracticeAnswer() {
@@ -327,18 +338,14 @@ class ZenViewModel(
         _practiceTotal.value = practiceSession.progress.total
         _isPracticeAnswerLocked.value = true
 
-        if (submission.isCorrect) {
-            _practiceFeedback.value = "正解"
-        } else {
-            _practiceFeedback.value = "不正解：${submission.correctAnswer}"
-        }
+        _practiceFeedback.value = submission
 
         nextProblemJob?.cancel()
         nextProblemJob = viewModelScope.launch {
             delay(1200)
             _practiceInput.value = ""
-            _practiceFeedback.value = ""
-            if (_isPracticeActive.value) {
+            _practiceFeedback.value = null
+            if (_practicePhase.value == PracticePhase.ACTIVE) {
                 val nextProblem = createProblem()
                 practiceSession.advance(nextProblem.first, nextProblem.second)
                 _currentProblemText.value = nextProblem.first
@@ -348,9 +355,22 @@ class ZenViewModel(
     }
 
     fun updatePracticeInput(input: String) {
-        if (!_isPracticeAnswerLocked.value && input.all(Char::isDigit)) {
+        if (
+            !_isPracticeAnswerLocked.value &&
+            input.length <= MAX_PRACTICE_INPUT_LENGTH &&
+            input.all(Char::isDigit)
+        ) {
             _practiceInput.value = input
         }
+    }
+
+    private fun finishPractice() {
+        _practicePhase.value = PracticePhase.FINISHED
+        _isPracticeAnswerLocked.value = false
+        _practiceInput.value = ""
+        _practiceFeedback.value = null
+        nextProblemJob?.cancel()
+        practiceSession.stop()
     }
 
     private fun createProblem(): Pair<String, Long> {
@@ -373,6 +393,10 @@ class ZenViewModel(
         super.onCleared()
         timerJob?.cancel()
         nextProblemJob?.cancel()
+    }
+
+    private companion object {
+        const val MAX_PRACTICE_INPUT_LENGTH = 3
     }
 }
 

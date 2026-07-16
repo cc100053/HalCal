@@ -59,7 +59,8 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. Andro
 Non-fatal warnings observed:
 
 - AGP 8.5.0 reports that it was tested through compile SDK 34 while this project compiles against SDK 35.
-- `Theme.kt` writes deprecated `statusBarColor` and `navigationBarColor` properties.
+
+System bars now use Activity edge-to-edge APIs; the earlier deprecated direct color-property warnings are resolved.
 
 No CI configuration, static-analysis customization, UI tests, or instrumentation tests are currently present.
 

@@ -28,6 +28,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import kotlinx.coroutines.launch
 
 @Composable
@@ -37,6 +39,7 @@ fun SorobanCanvas(
     onRodValueChange: (rodIndex: Int, newValue: Int) -> Unit,
     soundEnabled: Boolean,
     hapticsEnabled: Boolean,
+    accessibilityDescription: String,
     modifier: Modifier = Modifier
 ) {
     val hapticFeedback = LocalHapticFeedback.current
@@ -148,6 +151,9 @@ fun SorobanCanvas(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
+                .semantics {
+                    contentDescription = accessibilityDescription
+                }
                 .pointerInput(rodsCount, rodValues, soundEnabled, hapticsEnabled) {
                     detectTapGestures { handleTouch(it.x, it.y) }
                 }

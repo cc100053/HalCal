@@ -12,6 +12,7 @@ data class CalculatorState(
 class CalculatorEngine {
     private companion object {
         const val ERROR_DISPLAY = "エラー"
+        const val MAX_INPUT_LENGTH = 16
     }
 
     private var expression = ""
@@ -40,7 +41,10 @@ class CalculatorEngine {
     }
 
     fun loadResult(result: String): CalculatorState {
-        val normalized = result.toDoubleOrNull()?.let { result } ?: "0"
+        val normalized = result.toDoubleOrNull()
+            ?.takeIf { it.isFinite() }
+            ?.let { result }
+            ?: "0"
         expression = ""
         display = normalized
         isResultDisplayed = true
@@ -86,9 +90,8 @@ class CalculatorEngine {
     }
 
     private fun evaluate(): String? {
-        if (isAwaitingOperand) return null
+        if (isAwaitingOperand || isResultDisplayed || expression.isEmpty()) return null
         val fullExpression = expression + display
-        if (fullExpression.isEmpty()) return null
 
         val result = MathEvaluator.evaluate(fullExpression)
         if (!result.isFinite()) {
@@ -109,7 +112,7 @@ class CalculatorEngine {
             expression = ""
             isResultDisplayed = false
             isAwaitingOperand = false
-        } else if (!display.contains('.')) {
+        } else if (!display.contains('.') && display.length < MAX_INPUT_LENGTH) {
             display += "."
         }
     }
@@ -121,7 +124,7 @@ class CalculatorEngine {
             isResultDisplayed = false
         } else if (display == "0" || isAwaitingOperand) {
             display = digit
-        } else {
+        } else if (display.length < MAX_INPUT_LENGTH) {
             display += digit
         }
         isAwaitingOperand = false

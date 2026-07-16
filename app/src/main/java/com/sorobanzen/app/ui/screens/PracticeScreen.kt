@@ -28,10 +28,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -39,11 +45,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sorobanzen.app.R
+import com.sorobanzen.app.domain.PracticeSubmission
 import com.sorobanzen.app.ui.components.ZenBackground
 import com.sorobanzen.app.ui.components.ZenCard
 import com.sorobanzen.app.ui.components.ZenMark
 import com.sorobanzen.app.ui.components.ZenMetric
 import com.sorobanzen.app.ui.components.ZenScreenHeader
+import com.sorobanzen.app.viewmodel.PracticePhase
 import com.sorobanzen.app.viewmodel.ZenViewModel
 
 @Composable
@@ -51,7 +59,7 @@ fun PracticeScreen(
     viewModel: ZenViewModel,
     modifier: Modifier = Modifier
 ) {
-    val isActive by viewModel.isPracticeActive.collectAsState()
+    val phase by viewModel.practicePhase.collectAsState()
     val timeLeft by viewModel.practiceTimeLeft.collectAsState()
     val score by viewModel.practiceScore.collectAsState()
     val total by viewModel.practiceTotal.collectAsState()
@@ -59,6 +67,10 @@ fun PracticeScreen(
     val inputVal by viewModel.practiceInput.collectAsState()
     val feedback by viewModel.practiceFeedback.collectAsState()
     val isAnswerLocked by viewModel.isPracticeAnswerLocked.collectAsState()
+
+    DisposableEffect(viewModel) {
+        onDispose(viewModel::stopPractice)
+    }
 
     ZenBackground(modifier = modifier.fillMaxSize()) {
         Column(
@@ -78,12 +90,13 @@ fun PracticeScreen(
             Spacer(modifier = Modifier.height(22.dp))
 
             AnimatedContent(
-                targetState = isActive,
+                targetState = phase,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
                 label = "PracticeState"
-            ) { active ->
-                if (active) {
-                    ActivePracticeContent(
+            ) { currentPhase ->
+                when (currentPhase) {
+                    PracticePhase.READY -> PracticeWelcome(onStart = viewModel::startPractice)
+                    PracticePhase.ACTIVE -> ActivePracticeContent(
                         timeLeft = timeLeft,
                         score = score,
                         total = total,
@@ -95,12 +108,73 @@ fun PracticeScreen(
                         onSubmit = viewModel::submitPracticeAnswer,
                         onStop = viewModel::stopPractice
                     )
-                } else {
-                    PracticeWelcome(onStart = viewModel::startPractice)
+                    PracticePhase.FINISHED -> PracticeResult(
+                        score = score,
+                        total = total,
+                        onRestart = viewModel::startPractice
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+private fun PracticeResult(
+    score: Int,
+    total: Int,
+    onRestart: () -> Unit
+) {
+    val accuracy = if (total == 0) "—" else "${score * 100 / total}%"
+
+    ZenCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ZenMark(modifier = Modifier.size(52.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(id = R.string.practice_result_title),
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(id = R.string.practice_result_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(22.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ZenMetric(
+                    label = stringResource(id = R.string.score_label),
+                    value = "$score / $total",
+                    modifier = Modifier.weight(1f)
+                )
+                ZenMetric(
+                    label = stringResource(id = R.string.accuracy_label),
+                    value = accuracy,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Spacer(modifier = Modifier.height(22.dp))
+            Button(
+                onClick = onRestart,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 52.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(stringResource(id = R.string.practice_again))
+            }
         }
     }
 }
@@ -148,12 +222,23 @@ private fun ActivePracticeContent(
     total: Int,
     problemText: String,
     inputVal: String,
-    feedback: String,
+    feedback: PracticeSubmission?,
     isAnswerLocked: Boolean,
     onInputChange: (String) -> Unit,
     onSubmit: () -> Unit,
     onStop: () -> Unit
 ) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val canSubmit = inputVal.toLongOrNull() != null && !isAnswerLocked
+
+    LaunchedEffect(problemText, isAnswerLocked) {
+        if (!isAnswerLocked) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -210,16 +295,15 @@ private fun ActivePracticeContent(
                 .height(52.dp),
             contentAlignment = Alignment.Center
         ) {
-            if (feedback.isNotEmpty()) {
-                val isCorrect = feedback == "正解"
-                val feedbackText = if (isCorrect) {
+            if (feedback != null) {
+                val feedbackText = if (feedback.isCorrect) {
                     stringResource(id = R.string.correct)
                 } else {
-                    stringResource(id = R.string.incorrect, feedback.substringAfter("："))
+                    stringResource(id = R.string.incorrect, feedback.correctAnswer)
                 }
                 Text(
                     text = feedbackText,
-                    color = if (isCorrect) {
+                    color = if (feedback.isCorrect) {
                         MaterialTheme.colorScheme.primary
                     } else {
                         MaterialTheme.colorScheme.tertiary
@@ -240,13 +324,15 @@ private fun ActivePracticeContent(
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
-                    if (inputVal.isNotBlank() && !isAnswerLocked) onSubmit()
+                    if (canSubmit) onSubmit()
                 }
             ),
             singleLine = true,
             enabled = !isAnswerLocked,
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -263,7 +349,7 @@ private fun ActivePracticeContent(
         ) {
             Button(
                 onClick = onSubmit,
-                enabled = inputVal.isNotBlank() && !isAnswerLocked,
+                enabled = canSubmit,
                 modifier = Modifier
                     .weight(1.25f)
                     .heightIn(min = 52.dp),

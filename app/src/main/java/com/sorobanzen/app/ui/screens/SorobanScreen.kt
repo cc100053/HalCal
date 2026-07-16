@@ -29,8 +29,13 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -79,6 +84,7 @@ fun SorobanScreen(
     val sorobanValue by viewModel.sorobanValue.collectAsState()
     val soundEnabled by viewModel.soundEffectsEnabled.collectAsState()
     val hapticsEnabled by viewModel.hapticEnabled.collectAsState()
+    val ttsEnabled by viewModel.ttsEnabled.collectAsState()
 
     fun performHapticFeedback() {
         if (hapticsEnabled) {
@@ -88,11 +94,31 @@ fun SorobanScreen(
 
     val kanjiReading = remember(sorobanValue) { SorobanEngine.convertToKanji(sorobanValue) }
     var showInfoDialog by remember { mutableStateOf(false) }
+    var isSharing by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    ShakeResetListener(enabled = true) {
+    fun clearWithUndo() {
+        val previousValues = rodValues.copyOf()
+        if (previousValues.all { it == 0 }) return
+
         viewModel.clearSoroban()
         performHapticFeedback()
-        Toast.makeText(context, context.getString(R.string.clear_beads), Toast.LENGTH_SHORT).show()
+        coroutineScope.launch {
+            val result = snackbarHostState.showSnackbar(
+                message = context.getString(R.string.soroban_cleared),
+                actionLabel = context.getString(R.string.undo),
+                withDismissAction = true,
+                duration = SnackbarDuration.Short
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.restoreSoroban(previousValues)
+                performHapticFeedback()
+            }
+        }
+    }
+
+    ShakeResetListener(enabled = true) {
+        clearWithUndo()
     }
 
     ZenBackground(modifier = modifier.fillMaxSize()) {
@@ -173,6 +199,7 @@ fun SorobanScreen(
                                 performHapticFeedback()
                                 viewModel.speakJapaneseNumber(sorobanValue)
                             },
+                            enabled = ttsEnabled,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 44.dp),
@@ -199,10 +226,8 @@ fun SorobanScreen(
                             verticalArrangement = Arrangement.spacedBy(7.dp)
                         ) {
                             Button(
-                                onClick = {
-                                    performHapticFeedback()
-                                    viewModel.clearSoroban()
-                                },
+                                onClick = ::clearWithUndo,
+                                enabled = sorobanValue != 0L,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(min = 44.dp),
@@ -227,38 +252,53 @@ fun SorobanScreen(
                             ) {
                                 SorobanUtilityButton(
                                     icon = {
-                                        Icon(
-                                            imageVector = Icons.Default.Share,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                        if (isSharing) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(17.dp),
+                                                strokeWidth = 2.dp
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Share,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
                                     },
-                                    label = stringResource(id = R.string.share),
+                                    label = stringResource(
+                                        id = if (isSharing) R.string.sharing else R.string.share
+                                    ),
                                     modifier = Modifier.weight(1f),
+                                    enabled = !isSharing,
                                     onClick = {
                                         performHapticFeedback()
+                                        isSharing = true
                                         coroutineScope.launch {
-                                            runCatching {
-                                                ShareUtility.createSorobanShareIntent(
-                                                    context = context,
-                                                    value = sorobanValue,
-                                                    kanjiReading = kanjiReading,
-                                                    rodsCount = rodsCount,
-                                                    rodValues = rodValues
-                                                )
-                                            }.onSuccess { shareIntent ->
-                                                context.startActivity(
-                                                    Intent.createChooser(
-                                                        shareIntent,
-                                                        context.getString(R.string.share_title)
+                                            try {
+                                                runCatching {
+                                                    ShareUtility.createSorobanShareIntent(
+                                                        context = context,
+                                                        value = sorobanValue,
+                                                        kanjiReading = kanjiReading,
+                                                        rodsCount = rodsCount,
+                                                        rodValues = rodValues
                                                     )
-                                                )
-                                            }.onFailure {
-                                                Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.share_failed),
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
+                                                }.onSuccess { shareIntent ->
+                                                    context.startActivity(
+                                                        Intent.createChooser(
+                                                            shareIntent,
+                                                            context.getString(R.string.share_title)
+                                                        )
+                                                    )
+                                                }.onFailure {
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.share_failed),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            } finally {
+                                                isSharing = false
                                             }
                                         }
                                     }
@@ -297,12 +337,23 @@ fun SorobanScreen(
                     onRodValueChange = viewModel::updateRodValue,
                     soundEnabled = soundEnabled,
                     hapticsEnabled = hapticsEnabled,
+                    accessibilityDescription = stringResource(
+                        id = R.string.soroban_canvas_description,
+                        String.format(Locale.ROOT, "%,d", sorobanValue)
+                    ),
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
                         .clip(MaterialTheme.shapes.large)
                 )
             }
+
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp)
+            )
         }
     }
 
@@ -336,10 +387,12 @@ private fun SorobanUtilityButton(
     icon: @Composable () -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Surface(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.heightIn(min = 44.dp),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant,

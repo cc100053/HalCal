@@ -63,6 +63,8 @@ Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns on
 - Calculator parser errors and division by zero become `Double.NaN`; calculator UI converts non-finite results to `Error` and does not save them.
 - TTS only emits when the preference is enabled; the activity only speaks after successful Japanese initialization.
 - Practice timer and delayed-next-problem jobs are cancelled on stop and `ViewModel.onCleared()`.
+- Practice UI moves through explicit ready, active, and finished phases; an active sheet disposal completes the session instead of leaving a hidden timer running.
+- Soroban undo restores a size-matched defensive copy of the previous rod state, then recomputes the numeric value.
 - Shared images live only under `cacheDir/shared_images`, the exact path exposed by `file_paths.xml`.
 
 ## Extension guidance
