@@ -9,6 +9,6 @@ data class HistoryEntity(
     val id: Long = 0L,
     val expression: String,
     val result: String,
-    val mode: String, // "Normal" or "Soroban"
+    val mode: String,
     val timestamp: Long = System.currentTimeMillis()
 )

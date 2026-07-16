@@ -70,7 +70,9 @@ object MathEvaluator {
             val startPos = pos
             if (eat('('.code)) { // parentheses
                 x = parseExpression()
-                eat(')'.code)
+                if (!eat(')'.code)) {
+                    throw IllegalArgumentException("Missing closing parenthesis")
+                }
             } else if ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) { // numbers
                 while ((ch >= '0'.code && ch <= '9'.code) || ch == '.'.code) nextChar()
                 x = str.substring(startPos, pos).toDouble()

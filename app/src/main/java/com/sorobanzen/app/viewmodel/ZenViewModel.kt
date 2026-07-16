@@ -3,14 +3,13 @@ package com.sorobanzen.app.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.sorobanzen.app.data.AppPreferences
 import com.sorobanzen.app.data.HistoryDao
 import com.sorobanzen.app.data.HistoryEntity
-import com.sorobanzen.app.domain.MathEvaluator
+import com.sorobanzen.app.domain.CalculatorEngine
+import com.sorobanzen.app.domain.PracticeSession
 import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.domain.TaxCalculator
-import com.sorobanzen.app.domain.UnitConverter
-import com.sorobanzen.app.domain.TatamiPlanner
-import kotlin.math.pow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,12 +18,16 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import kotlin.random.Random
 
-class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
+class ZenViewModel(
+    private val historyDao: HistoryDao,
+    private val preferences: AppPreferences
+) : ViewModel() {
+
+    private val calculator = CalculatorEngine()
 
     // --- Calculator Portrait States ---
     private val _expression = MutableStateFlow("")
@@ -33,30 +36,25 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
     private val _displayText = MutableStateFlow("0")
     val displayText: StateFlow<String> = _displayText.asStateFlow()
 
-    private var isResultDisplayed = false
-
     // --- Soroban Landscape States ---
-    private val _rodsCount = MutableStateFlow(13)
+    private val _rodsCount = MutableStateFlow(preferences.rodsCount)
     val rodsCount: StateFlow<Int> = _rodsCount.asStateFlow()
 
-    private val _rodValues = MutableStateFlow(IntArray(13))
+    private val _rodValues = MutableStateFlow(IntArray(preferences.rodsCount))
     val rodValues: StateFlow<IntArray> = _rodValues.asStateFlow()
 
     private val _sorobanValue = MutableStateFlow(0L)
     val sorobanValue: StateFlow<Long> = _sorobanValue.asStateFlow()
 
     // --- Settings States ---
-    private val _soundEffectsEnabled = MutableStateFlow(true)
+    private val _soundEffectsEnabled = MutableStateFlow(preferences.soundEffectsEnabled)
     val soundEffectsEnabled: StateFlow<Boolean> = _soundEffectsEnabled.asStateFlow()
 
-    private val _hapticEnabled = MutableStateFlow(true)
+    private val _hapticEnabled = MutableStateFlow(preferences.hapticsEnabled)
     val hapticEnabled: StateFlow<Boolean> = _hapticEnabled.asStateFlow()
 
-    private val _ttsEnabled = MutableStateFlow(true)
+    private val _ttsEnabled = MutableStateFlow(preferences.ttsEnabled)
     val ttsEnabled: StateFlow<Boolean> = _ttsEnabled.asStateFlow()
-
-    private val _language = MutableStateFlow("ja") // "ja" or "en"
-    val language: StateFlow<String> = _language.asStateFlow()
 
     // --- History Flow ---
     val historyList = historyDao.getAllHistory()
@@ -82,16 +80,6 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
     private val _metricValue = MutableStateFlow("1.0")
     val metricValue: StateFlow<String> = _metricValue.asStateFlow()
 
-    // --- Tatami Planner States ---
-    private val _tatamiWidth = MutableStateFlow(3.6)
-    val tatamiWidth: StateFlow<Double> = _tatamiWidth.asStateFlow()
-
-    private val _tatamiLength = MutableStateFlow(3.6)
-    val tatamiLength: StateFlow<Double> = _tatamiLength.asStateFlow()
-
-    private val _tatamiRegion = MutableStateFlow(TatamiPlanner.Region.TOKYO)
-    val tatamiRegion: StateFlow<TatamiPlanner.Region> = _tatamiRegion.asStateFlow()
-
     // --- Practice/Training Mode States ---
     private val _isPracticeActive = MutableStateFlow(false)
     val isPracticeActive: StateFlow<Boolean> = _isPracticeActive.asStateFlow()
@@ -108,15 +96,18 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
     private val _currentProblemText = MutableStateFlow("")
     val currentProblemText: StateFlow<String> = _currentProblemText.asStateFlow()
 
-    private var currentProblemAnswer = 0L
-
     private val _practiceInput = MutableStateFlow("")
     val practiceInput: StateFlow<String> = _practiceInput.asStateFlow()
 
-    private val _practiceFeedback = MutableStateFlow("") // Correct/Incorrect feedback
+    private val _practiceFeedback = MutableStateFlow("")
     val practiceFeedback: StateFlow<String> = _practiceFeedback.asStateFlow()
 
+    private val _isPracticeAnswerLocked = MutableStateFlow(false)
+    val isPracticeAnswerLocked: StateFlow<Boolean> = _isPracticeAnswerLocked.asStateFlow()
+
     private var timerJob: Job? = null
+    private var nextProblemJob: Job? = null
+    private val practiceSession = PracticeSession()
 
     init {
         // Observe rods count to update the rodValues array size
@@ -130,80 +121,24 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
 
     // --- Calculator Operations ---
     fun onCalculatorKeyPress(key: String) {
-        when (key) {
-            "C" -> {
-                if (_displayText.value.length > 1) {
-                    _displayText.value = _displayText.value.dropLast(1)
-                } else {
-                    _displayText.value = "0"
+        val state = calculator.press(key)
+        _expression.value = state.expression
+        _displayText.value = state.display
+
+        state.completedExpression?.let { completedExpression ->
+            state.display.toLongOrNull()?.let { result ->
+                if (result in 0 until 10_000_000_000_000_000L) {
+                    speakJapaneseNumber(result)
                 }
             }
-            "AC" -> {
-                _expression.value = ""
-                _displayText.value = "0"
-                isResultDisplayed = false
-            }
-            "+", "-", "×", "÷" -> {
-                val operator = when (key) {
-                    "×" -> "*"
-                    "÷" -> "/"
-                    else -> key
-                }
-                
-                // If a result is displayed, chain the expression using the result
-                if (isResultDisplayed) {
-                    _expression.value = _displayText.value + operator
-                    isResultDisplayed = false
-                } else {
-                    _expression.value += _displayText.value + operator
-                }
-                _displayText.value = "0"
-            }
-            "=" -> {
-                val fullExpr = _expression.value + _displayText.value
-                if (fullExpr.isNotEmpty()) {
-                    val result = MathEvaluator.evaluate(fullExpr)
-                    if (result.isNaN()) {
-                        _displayText.value = "Error"
-                    } else {
-                        // Format result cleanly
-                        val formattedResult = if (result % 1.0 == 0.0) {
-                            result.toLong().toString()
-                        } else {
-                            String.format("%.4f", result).trimEnd('0').trimEnd('.')
-                        }
-                        
-                        _displayText.value = formattedResult
-                        _expression.value = fullExpr
-                        isResultDisplayed = true
-                        
-                        // Speak out the result if TTS is enabled
-                        if (result % 1.0 == 0.0 && result >= 0 && result < 10000000000000000L) {
-                            speakJapaneseNumber(result.toLong())
-                        }
-                        
-                        // Save to Database
-                        saveToHistory(fullExpr, formattedResult, "Normal")
-                    }
-                }
-            }
-            "." -> {
-                if (isResultDisplayed) {
-                    _displayText.value = "0."
-                    isResultDisplayed = false
-                } else if (!_displayText.value.contains(".")) {
-                    _displayText.value += "."
-                }
-            }
-            else -> { // Number keys 0-9
-                if (_displayText.value == "0" || isResultDisplayed) {
-                    _displayText.value = key
-                    isResultDisplayed = false
-                } else {
-                    _displayText.value += key
-                }
-            }
+            saveToHistory(completedExpression, state.display, "通常計算")
         }
+    }
+
+    fun loadCalculatorResult(result: String) {
+        val state = calculator.loadResult(result)
+        _expression.value = state.expression
+        _displayText.value = state.display
     }
 
     // --- Soroban Operations ---
@@ -218,12 +153,8 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
 
     fun updateSorobanValueFromRods() {
         var total = 0L
-        val rods = _rodValues.value
-        // Rod index 0 is left (high weight), rod index N-1 is right (low weight: 10^0)
-        val size = rods.size
-        for (i in 0 until size) {
-            val weight = 10.0.pow(size - 1 - i).toLong()
-            total += rods[i] * weight
+        for (digit in _rodValues.value) {
+            total = total * 10 + digit
         }
         _sorobanValue.value = total
     }
@@ -236,13 +167,13 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
     fun loadNumberToSoroban(num: Long) {
         val count = _rodsCount.value
         val rods = IntArray(count)
-        var temp = num
+        var temp = num.coerceAtLeast(0L)
         for (i in count - 1 downTo 0) {
             rods[i] = (temp % 10).toInt()
             temp /= 10
         }
         _rodValues.value = rods
-        _sorobanValue.value = num
+        updateSorobanValueFromRods()
     }
 
     // --- Database Operations ---
@@ -266,23 +197,24 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
 
     // --- Settings Setters ---
     fun setRodsCount(count: Int) {
-        _rodsCount.value = count.coerceIn(7, 17)
+        val validatedCount = count.coerceIn(7, 17)
+        _rodsCount.value = validatedCount
+        preferences.rodsCount = validatedCount
     }
 
     fun setSoundEffectsEnabled(enabled: Boolean) {
         _soundEffectsEnabled.value = enabled
+        preferences.soundEffectsEnabled = enabled
     }
 
     fun setHapticEnabled(enabled: Boolean) {
         _hapticEnabled.value = enabled
+        preferences.hapticsEnabled = enabled
     }
 
     fun setTtsEnabled(enabled: Boolean) {
         _ttsEnabled.value = enabled
-    }
-
-    fun setLanguage(lang: String) {
-        _language.value = lang
+        preferences.ttsEnabled = enabled
     }
 
     // --- Japanese TTS Trigger ---
@@ -298,7 +230,9 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
     // --- Tax Calculator Operations ---
     fun updateTaxInput(input: String) {
         _taxAmountExcl.value = input
-        calculateTaxBreakdown()
+        _taxBreakdown.value = parseTaxAmount(input)?.let {
+            TaxCalculator.addTax(it, _taxRate.value)
+        }
     }
 
     fun setTaxRate(rate: TaxCalculator.TaxRate) {
@@ -307,32 +241,41 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
     }
 
     private fun calculateTaxBreakdown() {
-        val amount = _taxAmountExcl.value.toDoubleOrNull() ?: 0.0
-        _taxBreakdown.value = TaxCalculator.addTax(amount, _taxRate.value)
+        _taxBreakdown.value = parseTaxAmount(_taxAmountExcl.value)?.let {
+            TaxCalculator.addTax(it, _taxRate.value)
+        }
     }
 
     fun addTaxToCalculator() {
-        val breakdown = _taxBreakdown.value
-        if (breakdown != null) {
-            _displayText.value = breakdown.totalAmount.toLong().toString()
+        parseTaxAmount(_taxAmountExcl.value)?.let { amount ->
+            val breakdown = TaxCalculator.addTax(amount, _taxRate.value)
+            _taxBreakdown.value = breakdown
+            val formattedResult = breakdown.totalAmount.stripTrailingZeros().toPlainString()
+            loadCalculatorResult(formattedResult)
             saveToHistory(
                 expr = "${breakdown.originalAmount} + 消費税 (${(breakdown.taxRate * BigDecimal("100")).toInt()}%)",
-                resultStr = breakdown.totalAmount.toLong().toString(),
-                mode = "Tax"
+                resultStr = formattedResult,
+                mode = "消費税計算"
             )
         }
     }
 
     fun removeTaxFromCalculator() {
-        val inputVal = _taxAmountExcl.value.toDoubleOrNull() ?: 0.0
-        val breakdown = TaxCalculator.removeTax(inputVal, _taxRate.value)
-        _displayText.value = breakdown.originalAmount.toLong().toString()
-        saveToHistory(
-            expr = "${breakdown.totalAmount} - 消費税抜 (${(breakdown.taxRate * BigDecimal("100")).toInt()}%)",
-            resultStr = breakdown.originalAmount.toLong().toString(),
-            mode = "Tax"
-        )
+        parseTaxAmount(_taxAmountExcl.value)?.let { amount ->
+            val breakdown = TaxCalculator.removeTax(amount, _taxRate.value)
+            _taxBreakdown.value = breakdown
+            val formattedResult = breakdown.originalAmount.stripTrailingZeros().toPlainString()
+            loadCalculatorResult(formattedResult)
+            saveToHistory(
+                expr = "${breakdown.totalAmount} - 消費税抜 (${(breakdown.taxRate * BigDecimal("100")).toInt()}%)",
+                resultStr = formattedResult,
+                mode = "消費税計算"
+            )
+        }
     }
+
+    private fun parseTaxAmount(input: String): Double? =
+        input.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }
 
     // --- Traditional Unit Converter Operations ---
     fun setUnitCategory(category: String) {
@@ -343,25 +286,19 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
         _metricValue.value = value
     }
 
-    // --- Tatami Planner Operations ---
-    fun updateTatamiDimensions(width: Double, length: Double) {
-        _tatamiWidth.value = width
-        _tatamiLength.value = length
-    }
-
-    fun setTatamiRegion(region: TatamiPlanner.Region) {
-        _tatamiRegion.value = region
-    }
-
     // --- Practice/Training Mode Logic ---
     fun startPractice() {
+        nextProblemJob?.cancel()
         _isPracticeActive.value = true
         _practiceScore.value = 0
         _practiceTotal.value = 0
         _practiceTimeLeft.value = 60
         _practiceInput.value = ""
         _practiceFeedback.value = ""
-        generateNewProblem()
+        _isPracticeAnswerLocked.value = false
+        val firstProblem = createProblem()
+        practiceSession.start(firstProblem.first, firstProblem.second)
+        _currentProblemText.value = firstProblem.first
         
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
@@ -370,71 +307,83 @@ class ZenViewModel(private val historyDao: HistoryDao) : ViewModel() {
                 _practiceTimeLeft.value -= 1
             }
             _isPracticeActive.value = false
+            _isPracticeAnswerLocked.value = false
+            practiceSession.stop()
+            nextProblemJob?.cancel()
         }
     }
 
     fun stopPractice() {
         _isPracticeActive.value = false
+        _isPracticeAnswerLocked.value = false
         timerJob?.cancel()
+        nextProblemJob?.cancel()
+        practiceSession.stop()
     }
 
     fun submitPracticeAnswer() {
-        if (!_isPracticeActive.value) return
-        
-        val userAnswer = _practiceInput.value.toLongOrNull()
-        _practiceTotal.value += 1
-        
-        if (userAnswer == currentProblemAnswer) {
-            _practiceScore.value += 1
-            _practiceFeedback.value = "Correct"
+        val submission = practiceSession.submit(_practiceInput.value) ?: return
+        _practiceScore.value = practiceSession.progress.score
+        _practiceTotal.value = practiceSession.progress.total
+        _isPracticeAnswerLocked.value = true
+
+        if (submission.isCorrect) {
+            _practiceFeedback.value = "正解"
         } else {
-            _practiceFeedback.value = "Incorrect: $currentProblemAnswer"
+            _practiceFeedback.value = "不正解：${submission.correctAnswer}"
         }
-        
-        // Wait a brief moment, then load next problem
-        viewModelScope.launch {
+
+        nextProblemJob?.cancel()
+        nextProblemJob = viewModelScope.launch {
             delay(1200)
             _practiceInput.value = ""
             _practiceFeedback.value = ""
             if (_isPracticeActive.value) {
-                generateNewProblem()
+                val nextProblem = createProblem()
+                practiceSession.advance(nextProblem.first, nextProblem.second)
+                _currentProblemText.value = nextProblem.first
+                _isPracticeAnswerLocked.value = false
             }
         }
     }
 
     fun updatePracticeInput(input: String) {
-        _practiceInput.value = input
+        if (!_isPracticeAnswerLocked.value && input.all(Char::isDigit)) {
+            _practiceInput.value = input
+        }
     }
 
-    private fun generateNewProblem() {
+    private fun createProblem(): Pair<String, Long> {
         // Simple level generator based on standard 1-2 digit additions/subtractions
         val isAddition = Random.nextBoolean()
         val num1 = Random.nextLong(1, 100)
         val num2 = Random.nextLong(1, 100)
-        
-        if (isAddition) {
-            _currentProblemText.value = "$num1 + $num2"
-            currentProblemAnswer = num1 + num2
+
+        return if (isAddition) {
+            "$num1 + $num2" to (num1 + num2)
         } else {
             // Ensure positive result for abacus learning
             val large = maxOf(num1, num2)
             val small = minOf(num1, num2)
-            _currentProblemText.value = "$large - $small"
-            currentProblemAnswer = large - small
+            "$large - $small" to (large - small)
         }
     }
 
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
+        nextProblemJob?.cancel()
     }
 }
 
-class ZenViewModelFactory(private val historyDao: HistoryDao) : ViewModelProvider.Factory {
+class ZenViewModelFactory(
+    private val historyDao: HistoryDao,
+    private val preferences: AppPreferences
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ZenViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ZenViewModel(historyDao) as T
+            return ZenViewModel(historyDao, preferences) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

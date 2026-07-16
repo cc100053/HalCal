@@ -22,6 +22,7 @@ object TaxCalculator {
      * Calculates tax details when adding tax (excluding to including).
      */
     fun addTax(amount: Double, rate: TaxRate): TaxBreakdown {
+        require(amount.isFinite() && amount >= 0.0) { "Amount must be a finite, non-negative number" }
         val original = BigDecimal(amount.toString())
         val taxRate = rate.rate
         
@@ -42,6 +43,7 @@ object TaxCalculator {
      * Calculates tax details when removing tax (including to excluding).
      */
     fun removeTax(amount: Double, rate: TaxRate): TaxBreakdown {
+        require(amount.isFinite() && amount >= 0.0) { "Amount must be a finite, non-negative number" }
         val total = BigDecimal(amount.toString())
         val taxRate = rate.rate
         
