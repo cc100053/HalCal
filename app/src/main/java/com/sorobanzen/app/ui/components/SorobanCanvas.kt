@@ -9,7 +9,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -28,8 +31,17 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
+import com.sorobanzen.app.R
+import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 @Composable
@@ -92,7 +104,9 @@ fun SorobanCanvas(
     val surroundColor = MaterialTheme.colorScheme.surfaceVariant
 
     BoxWithConstraints(
-        modifier = modifier.background(surroundColor)
+        modifier = modifier
+            .background(surroundColor)
+            .semantics { contentDescription = accessibilityDescription }
     ) {
         val canvasWidth = constraints.maxWidth.toFloat()
         val canvasHeight = constraints.maxHeight.toFloat()
@@ -110,6 +124,21 @@ fun SorobanCanvas(
             (lowerHeight - 32f) / 4.55f
         ).coerceAtLeast(12f)
         val beadWidth = (rodWidth * 0.80f).coerceAtLeast(10f)
+
+        fun commitRodValue(rodIndex: Int, nextValue: Int): Boolean {
+            val currentValue = rodValues.getOrElse(rodIndex) { 0 }
+            val coercedValue = nextValue.coerceIn(0, 9)
+            if (coercedValue == currentValue) return false
+
+            onRodValueChange(rodIndex, coercedValue)
+            if (hapticsEnabled) {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
+            if (soundEnabled) {
+                view.playSoundEffect(SoundEffectConstants.CLICK)
+            }
+            return true
+        }
 
         fun handleTouch(touchX: Float, touchY: Float) {
             val rodIndex = (touchX / rodWidth).toInt().coerceIn(0, rodsCount - 1)
@@ -137,23 +166,12 @@ fun SorobanCanvas(
                 }
             }
 
-            if (nextValue != currentValue) {
-                onRodValueChange(rodIndex, nextValue)
-                if (hapticsEnabled) {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                }
-                if (soundEnabled) {
-                    view.playSoundEffect(SoundEffectConstants.CLICK)
-                }
-            }
+            commitRodValue(rodIndex, nextValue)
         }
 
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .semantics {
-                    contentDescription = accessibilityDescription
-                }
                 .pointerInput(rodsCount, rodValues, soundEnabled, hapticsEnabled) {
                     detectTapGestures { handleTouch(it.x, it.y) }
                 }
@@ -277,6 +295,127 @@ fun SorobanCanvas(
                     )
                 }
             }
+        }
+
+        val clearRodAction = stringResource(id = R.string.soroban_rod_clear_action)
+        Row(modifier = Modifier.fillMaxSize()) {
+            repeat(rodsCount) { index ->
+                val currentValue = rodValues.getOrElse(index) { 0 }
+                val positionFromRight = rodsCount - index
+                val rodDescription = stringResource(
+                    id = R.string.soroban_rod_accessibility,
+                    positionFromRight,
+                    currentValue
+                )
+                val rodState = stringResource(id = R.string.soroban_rod_state, currentValue)
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .semantics {
+                            contentDescription = rodDescription
+                            stateDescription = rodState
+                            progressBarRangeInfo = ProgressBarRangeInfo(
+                                current = currentValue.toFloat(),
+                                range = 0f..9f,
+                                steps = 8
+                            )
+                            setProgress { targetValue ->
+                                commitRodValue(index, targetValue.roundToInt())
+                            }
+                            customActions = listOf(
+                                CustomAccessibilityAction(clearRodAction) {
+                                    commitRodValue(index, 0)
+                                }
+                            )
+                        }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SorobanGuidePreview(
+    accessibilityDescription: String,
+    modifier: Modifier = Modifier
+) {
+    val isDark = isSystemInDarkTheme()
+    val fieldTop = if (isDark) Color(0xFF191815) else Color(0xFFF0EBDD)
+    val fieldBottom = if (isDark) Color(0xFF11110F) else Color(0xFFE3DCCB)
+    val frameColor = if (isDark) Color(0xFF5D4939) else Color(0xFF8A6548)
+    val rodColor = if (isDark) Color(0xFF777268) else Color(0xFF8B8376)
+    val beamColor = if (isDark) Color(0xFF39362F) else Color(0xFFD4CCBC)
+    val beadColor = if (isDark) Color(0xFFC08B58) else Color(0xFF8C542F)
+    val dotColor = if (isDark) Color(0xFFE6DDCE) else Color(0xFF342F29)
+
+    Canvas(
+        modifier = modifier.semantics {
+            contentDescription = accessibilityDescription
+        }
+    ) {
+        val inset = 3f
+        val beamHeight = (size.height * 0.055f).coerceAtLeast(7f)
+        val beamTop = size.height * 0.38f
+        val centerX = size.width / 2f
+        val beadWidth = size.width * 0.48f
+        val beadHeight = (size.height * 0.135f).coerceAtMost(beadWidth * 0.72f)
+
+        drawRoundRect(
+            brush = Brush.verticalGradient(listOf(fieldTop, fieldBottom)),
+            topLeft = Offset(inset, inset),
+            size = Size(size.width - inset * 2, size.height - inset * 2),
+            cornerRadius = CornerRadius(16f)
+        )
+        drawRoundRect(
+            color = frameColor,
+            cornerRadius = CornerRadius(16f),
+            style = Stroke(width = 6f)
+        )
+        drawLine(
+            color = rodColor,
+            start = Offset(centerX, inset + 4f),
+            end = Offset(centerX, size.height - inset - 4f),
+            strokeWidth = 3f
+        )
+        drawRect(
+            color = beamColor,
+            topLeft = Offset(inset + 3f, beamTop),
+            size = Size(size.width - inset * 2 - 6f, beamHeight)
+        )
+        drawCircle(
+            color = dotColor,
+            radius = (beamHeight * 0.22f).coerceAtLeast(2.5f),
+            center = Offset(centerX, beamTop + beamHeight / 2f)
+        )
+
+        drawSorobanBead(
+            centerX = centerX,
+            centerY = beamTop - beadHeight / 2f - 6f,
+            beadWidth = beadWidth,
+            beadHeight = beadHeight,
+            color = beadColor,
+            dark = isDark
+        )
+
+        repeat(4) { beadIndex ->
+            val active = beadIndex < 2
+            val centerY = if (active) {
+                beamTop + beamHeight + beadHeight / 2f + 6f +
+                    beadIndex * (beadHeight + 4f)
+            } else {
+                size.height - beadHeight / 2f - 10f -
+                    (3 - beadIndex) * (beadHeight + 4f)
+            }
+            drawSorobanBead(
+                centerX = centerX,
+                centerY = centerY,
+                beadWidth = beadWidth,
+                beadHeight = beadHeight,
+                color = beadColor,
+                dark = isDark
+            )
         }
     }
 }

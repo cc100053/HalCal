@@ -71,15 +71,25 @@
     <!-- そろばん -->
     <string name="clear_beads">そろばんを払う</string>
     <string name="shake_to_clear">端末を振ってリセット</string>
+    <string name="soroban_interaction_hint">珠をタップ／ドラッグして動かす</string>
     <string name="rod_value">桁の重み：10^%1$d（%2$s）</string>
     <string name="read_aloud">読み上げ</string>
     <string name="guide">使い方</string>
     <string name="soroban_guide_title">そろばんの読み方</string>
-    <string name="soroban_guide_heaven">1. 五玉（天珠）：上にある1つの珠です。梁へ下げると「5」を表します。</string>
-    <string name="soroban_guide_earth">2. 一玉（地珠）：下にある4つの珠です。梁へ上げた珠がそれぞれ「1」を表します。</string>
-    <string name="soroban_guide_dots">3. 定位点：梁にある小さな点で、桁をまとめる目印になります。</string>
-    <string name="soroban_guide_value">4. 桁の値：梁に寄せた珠だけを合計し、0から9の数字として読みます。</string>
+    <string name="soroban_guide_heaven_title">五玉（天珠）</string>
+    <string name="soroban_guide_heaven_description">梁へ下げると「5」を表します。</string>
+    <string name="soroban_guide_earth_title">一玉（地珠）</string>
+    <string name="soroban_guide_earth_description">梁へ上げた珠が、それぞれ「1」を表します。</string>
+    <string name="soroban_guide_dots_title">定位点</string>
+    <string name="soroban_guide_dots_description">桁を四つずつまとめる目印です。</string>
+    <string name="soroban_guide_value_title">桁の値</string>
+    <string name="soroban_guide_value_description">梁へ寄せた珠を合計し、0から9で読みます。</string>
+    <string name="soroban_guide_example">7 = 5 + 2</string>
+    <string name="soroban_guide_preview_description">7を表した一桁のそろばん</string>
     <string name="soroban_canvas_description">そろばん。現在の値は%1$sです。珠をタップまたはドラッグして動かします。</string>
+    <string name="soroban_rod_accessibility">右から%1$d桁目。現在の値は%2$dです。</string>
+    <string name="soroban_rod_state">値%1$d</string>
+    <string name="soroban_rod_clear_action">この桁を0にする</string>
     <string name="soroban_cleared">そろばんを払いました</string>
     <string name="undo">元に戻す</string>
 
@@ -137,7 +147,7 @@
     <string name="history_mode_tax">消費税計算</string>
 
     <!-- 共有 -->
-    <string name="share">状態を共有</string>
+    <string name="share">共有</string>
     <string name="sharing">作成中</string>
     <string name="share_title">計算の共有</string>
     <string name="share_failed">共有画像を作成できませんでした</string>

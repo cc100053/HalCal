@@ -1,6 +1,6 @@
 # Progress
 
-Last reviewed: 2026-07-16
+Last reviewed: 2026-07-17
 
 ## Capability status
 
@@ -8,7 +8,7 @@ Last reviewed: 2026-07-16
 | --- | --- | --- |
 | Portrait calculator | Implemented | Four operations, decimals, clear controls, precedence, formatted results |
 | Calculation history | Implemented | Room-backed newest-first list; normal and tax entries; load and clear actions |
-| Landscape soroban | Implemented | 7–17 rods, tap/drag, spring animation, sound/haptics, decimal value, clear undo, accessibility value description |
+| Landscape soroban | Implemented | 7–17 rods, tap/drag, spring animation, responsive control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
 | Japanese readings | Implemented | Kanji through `京`; core case unit-tested; Romaji removed from product and domain |
 | Japanese TTS | Implemented | Preference-gated; device voice/data availability required |
 | Shake reset | Implemented | Accelerometer listener with threshold and one-second cooldown |
@@ -18,7 +18,7 @@ Last reviewed: 2026-07-16
 | Practice mode | Implemented | 60-second add/subtract session with auto-focused answers, single-submit guard, and retained score/accuracy results |
 | Settings persistence | Implemented | Rod count, bead sound, haptics, and TTS in SharedPreferences |
 | Light/dark theme | Implemented | Refined washi/charcoal schemes; emulator-verified in both modes |
-| Responsive UI system | Implemented | Shared washi, ensō, card, pill, header, and metric components; safe insets and tablet keypad cap |
+| Responsive UI system | Implemented | Shared washi, ensō, card, pill, header, and metric components; safe insets, tablet keypad cap, and compact-height landscape handling |
 | Japanese-only interface | Implemented | Default resources, dates, history modes, errors, accessibility copy, and share card remain Japanese on every device locale |
 | Tatami planner | Removed | Deleted in current working tree; approximate `畳` conversion remains |
 
@@ -33,9 +33,9 @@ Current local JVM test classes:
 - `TaxCalculatorTest`: invalid input and add/remove rounding behavior.
 - `UnitConverterTest`: representative round trips.
 
-All pass under `./gradlew test` as of 2026-07-16, including Japanese calculator error display, repeat-equals stability, no-op equals, finite history loading, and readable input-length coverage.
+All pass under `./gradlew test` as of 2026-07-17, including Japanese calculator error display, repeat-equals stability, no-op equals, finite history loading, and readable input-length coverage.
 
-`assembleDebug` and `lint` also pass as of 2026-07-16. Emulator visual checks covered phone/tablet sizing, portrait/landscape orientation, light/dark themes, calculator, tax, settings, practice focus/results, soroban undo/accessibility, and share generation. A fresh API 36 Pixel 7 check under an `en-US` device locale confirmed that the app still renders Japanese-only labels without clipping.
+`assembleDebug` and `lint` also pass as of 2026-07-17. Emulator visual checks covered phone/tablet sizing, portrait/landscape orientation, light/dark themes, calculator, tax, settings, practice focus/results, soroban undo/accessibility, and share generation. A 2026-07-17 API 35 Medium Tablet pass covered the polished landscape rail, visual guide, compact-height rendering at 560 dpi, and per-rod adjustable semantics. An earlier API 36 Pixel 7 check under an `en-US` device locale confirmed that the app still renders Japanese-only labels without clipping.
 
 ## Coverage gaps
 
