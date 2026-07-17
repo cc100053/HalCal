@@ -8,11 +8,11 @@ Last reviewed: 2026-07-17
 | --- | --- | --- |
 | Portrait calculator | Implemented | Four operations, decimals, clear controls, precedence, formatted results |
 | Calculation history | Implemented | Room-backed newest-first list; normal and tax entries; load and clear actions |
-| Landscape soroban | Implemented | 7–17 rods, tap/drag, spring animation, responsive control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
+| Landscape soroban | Implemented | 7–17 rods, tap/drag, spring animation, pale hinoki/indigo Canvas materials, quiet unboxed control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
 | Japanese readings | Implemented | Kanji through `京`; core case unit-tested; Romaji removed from product and domain |
 | Japanese TTS | Implemented | Preference-gated; device voice/data availability required |
 | Shake reset | Implemented | Accelerometer listener with threshold and one-second cooldown |
-| Share card | Implemented | Cached 1200×750 fitted PNG through `FileProvider`; duplicate jobs blocked; device chooser required |
+| Share card | Implemented | Cached 1200×750 fitted PNG through `FileProvider`; zero state supported; duplicate jobs blocked; device chooser required |
 | Tax tool | Implemented | 10%/8%, add/remove, yen round-down rules, history integration |
 | Traditional units | Implemented | Metric input for length, area, volume, and weight |
 | Practice mode | Implemented | 60-second add/subtract session with auto-focused answers, single-submit guard, and retained score/accuracy results |
@@ -35,7 +35,7 @@ Current local JVM test classes:
 
 All pass under `./gradlew test` as of 2026-07-17, including Japanese calculator error display, repeat-equals stability, no-op equals, finite history loading, and readable input-length coverage.
 
-`assembleDebug` and `lint` also pass as of 2026-07-17. Emulator visual checks covered phone/tablet sizing, portrait/landscape orientation, light/dark themes, calculator, tax, settings, practice focus/results, soroban undo/accessibility, and share generation. A 2026-07-17 API 35 Medium Tablet pass covered the polished landscape rail, visual guide, compact-height rendering at 560 dpi, and per-rod adjustable semantics. An earlier API 36 Pixel 7 check under an `en-US` device locale confirmed that the app still renders Japanese-only labels without clipping.
+`assembleDebug` and `lint` also pass as of 2026-07-17. Emulator visual checks covered phone/tablet sizing, portrait/landscape orientation, light/dark themes, calculator, tax, settings, practice focus/results, soroban undo/accessibility, and share generation. A 2026-07-17 API 35 Medium Tablet pass covered the AI-selected hybrid soroban, zero and multi-trillion values, clear, the visual guide, compact-height rendering at 560 dpi, and zero-state share availability. Side-by-side design QA found no remaining P0, P1, or P2 visual issues. An earlier API 36 Pixel 7 check under an `en-US` device locale confirmed that the app still renders Japanese-only labels without clipping.
 
 ## Coverage gaps
 

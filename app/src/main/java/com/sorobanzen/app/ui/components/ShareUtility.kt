@@ -38,14 +38,14 @@ object ShareUtility {
             val canvas = Canvas(bitmap)
             // --- 1. Draw Background Card ---
             val bgPaint = Paint().apply {
-                color = Color.parseColor("#FAF9F6") // Warm white paper
+                color = Color.parseColor("#F4F0E7")
                 style = Paint.Style.FILL
             }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
             // Draw an elegant outer border
             val borderPaint = Paint().apply {
-                color = Color.parseColor("#E5E2D9")
+                color = Color.parseColor("#D8D1C4")
                 style = Paint.Style.STROKE
                 strokeWidth = 20f
             }
@@ -53,7 +53,7 @@ object ShareUtility {
 
             // --- 2. Title & Value Text ---
             val titlePaint = Paint().apply {
-                color = Color.parseColor("#8A9A86") // Moss Green Accent
+                color = Color.parseColor("#586A55")
                 textSize = 32f
                 isAntiAlias = true
                 textAlign = Paint.Align.CENTER
@@ -78,7 +78,7 @@ object ShareUtility {
             )
 
             val readingPaint = Paint().apply {
-                color = Color.parseColor("#5E6F54") // Soft dark moss
+                color = Color.parseColor("#586A55")
                 textSize = 36f
                 isAntiAlias = true
                 textAlign = Paint.Align.CENTER
@@ -108,12 +108,13 @@ object ShareUtility {
             val beamBottomY = beamTopY + beamHeight
             val bottomY = abacusTop + abacusHeight - frameThickness
 
-            val beadHeight = (upperHeight - 15f) * 0.8f
             val rodWidth = abacusWidth / rodsCount
+            val beadHeight = (abacusHeight * 0.08f).coerceAtLeast(16f)
+            val beadWidth = rodWidth * 0.72f
 
-            // Draw abacus wood frame (outer dark brown rectangle)
+            // Draw the pale hinoki frame used by the interactive soroban.
             val woodPaint = Paint().apply {
-                color = Color.parseColor("#5C4033") // Wood brown
+                color = Color.parseColor("#E7D2A8")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
@@ -121,7 +122,7 @@ object ShareUtility {
 
             // Draw inner metal/rod background
             val innerBgPaint = Paint().apply {
-                color = Color.parseColor("#F4F0E6")
+                color = Color.parseColor("#F0ECE3")
                 style = Paint.Style.FILL
             }
             canvas.drawRect(
@@ -134,7 +135,7 @@ object ShareUtility {
 
             // Draw Divider Beam (Horizontal)
             val beamPaint = Paint().apply {
-                color = Color.parseColor("#E5E2D9")
+                color = Color.parseColor("#DEC69B")
                 style = Paint.Style.FILL
             }
             canvas.drawRect(
@@ -147,18 +148,18 @@ object ShareUtility {
 
             // Paint definitions for Rods and Beads
             val rodPaint = Paint().apply {
-                color = Color.parseColor("#8A8A8A")
+                color = Color.parseColor("#92918B")
                 strokeWidth = 4f
             }
 
             val beadPaint = Paint().apply {
-                color = Color.parseColor("#8B5A2B") // Polished wood bead color
+                color = Color.parseColor("#254A7A")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
 
             val dotPaint = Paint().apply {
-                color = Color.parseColor("#1A1A1A")
+                color = Color.parseColor("#315A8D")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
@@ -182,7 +183,7 @@ object ShareUtility {
                 val minHeavenY = topY + beadHeight / 2 + 5f
                 val maxHeavenY = beamTopY - beadHeight / 2 - 5f
                 val heavenY = if (heavenActive) maxHeavenY else minHeavenY
-                drawBiConicalBead(canvas, rodX, heavenY, rodWidth * 0.8f, beadHeight, beadPaint)
+                drawBiConicalBead(canvas, rodX, heavenY, beadWidth, beadHeight, beadPaint)
 
                 // Draw earth beads
                 for (b in 0..3) {
@@ -190,7 +191,7 @@ object ShareUtility {
                     val activeY = beamBottomY + beadHeight / 2 + 5f + (b * (beadHeight + 2f))
                     val inactiveY = bottomY - beadHeight / 2 - 5f - ((3 - b) * (beadHeight + 2f))
                     val beadY = if (beadActive) activeY else inactiveY
-                    drawBiConicalBead(canvas, rodX, beadY, rodWidth * 0.8f, beadHeight, beadPaint)
+                    drawBiConicalBead(canvas, rodX, beadY, beadWidth, beadHeight, beadPaint)
                 }
             }
 
@@ -256,12 +257,28 @@ object ShareUtility {
         val midY = centerY
 
         val path = Path().apply {
-            moveTo(centerX, top)
-            lineTo(right, midY - beadHeight * 0.1f)
-            lineTo(right, midY + beadHeight * 0.1f)
-            lineTo(centerX, bottom)
-            lineTo(left, midY + beadHeight * 0.1f)
-            lineTo(left, midY - beadHeight * 0.1f)
+            moveTo(left + beadWidth * 0.29f, top)
+            quadTo(
+                left + beadWidth * 0.22f,
+                top,
+                left + beadWidth * 0.16f,
+                top + beadHeight * 0.17f
+            )
+            lineTo(left + beadWidth * 0.035f, midY - beadHeight * 0.1f)
+            quadTo(left, midY, left + beadWidth * 0.035f, midY + beadHeight * 0.1f)
+            lineTo(left + beadWidth * 0.16f, bottom - beadHeight * 0.17f)
+            quadTo(left + beadWidth * 0.22f, bottom, left + beadWidth * 0.29f, bottom)
+            lineTo(right - beadWidth * 0.29f, bottom)
+            quadTo(
+                right - beadWidth * 0.22f,
+                bottom,
+                right - beadWidth * 0.16f,
+                bottom - beadHeight * 0.17f
+            )
+            lineTo(right - beadWidth * 0.035f, midY + beadHeight * 0.1f)
+            quadTo(right, midY, right - beadWidth * 0.035f, midY - beadHeight * 0.1f)
+            lineTo(right - beadWidth * 0.16f, top + beadHeight * 0.17f)
+            quadTo(right - beadWidth * 0.22f, top, right - beadWidth * 0.29f, top)
             close()
         }
         canvas.drawPath(path, paint)

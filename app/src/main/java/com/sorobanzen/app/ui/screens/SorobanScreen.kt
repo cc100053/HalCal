@@ -2,7 +2,6 @@ package com.sorobanzen.app.ui.screens
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,19 +22,16 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -53,9 +49,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -71,7 +70,6 @@ import com.sorobanzen.app.ui.components.ShareUtility
 import com.sorobanzen.app.ui.components.SorobanCanvas
 import com.sorobanzen.app.ui.components.SorobanGuidePreview
 import com.sorobanzen.app.ui.components.ZenBackground
-import com.sorobanzen.app.ui.components.ZenCard
 import com.sorobanzen.app.ui.components.ZenMark
 import com.sorobanzen.app.viewmodel.ZenViewModel
 import java.util.Locale
@@ -140,243 +138,194 @@ fun SorobanScreen(
             val spaciousLayout = maxWidth >= 720.dp && maxHeight >= 560.dp
             val compactHeight = maxHeight < 500.dp
             val outerPadding = if (spaciousLayout) 16.dp else 10.dp
-            val contentPadding = if (compactHeight) 12.dp else 16.dp
-            val sectionGap = if (compactHeight) 10.dp else 18.dp
-            val sidebarWidth = (maxWidth * 0.31f).coerceIn(224.dp, 304.dp)
+            val railPadding = if (compactHeight) 8.dp else 12.dp
+            val sectionGap = if (compactHeight) 8.dp else 16.dp
+            val sidebarWidth = if (spaciousLayout) {
+                (maxWidth * 0.19f).coerceIn(196.dp, 244.dp)
+            } else {
+                (maxWidth * 0.25f).coerceIn(176.dp, 216.dp)
+            }
+            val instrumentShape = RoundedCornerShape(if (spaciousLayout) 18.dp else 14.dp)
+            val contentHeightFraction = if (spaciousLayout) 0.86f else 1f
 
             Row(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(outerPadding),
-                horizontalArrangement = Arrangement.spacedBy(outerPadding)
+                horizontalArrangement = Arrangement.spacedBy(if (spaciousLayout) 12.dp else 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                ZenCard(
+                Column(
                     modifier = Modifier
                         .width(sidebarWidth)
-                        .fillMaxHeight(),
-                    contentPadding = contentPadding
+                        .fillMaxHeight(contentHeightFraction)
+                        .padding(horizontal = railPadding, vertical = if (compactHeight) 4.dp else 8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            ZenMark(modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(7.dp))
-                            Text(
-                                text = stringResource(id = R.string.brand_name),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                border = BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.outlineVariant
-                                )
-                            ) {
-                                Text(
-                                    text = pluralStringResource(
-                                        id = R.plurals.rods_value,
-                                        count = rodsCount,
-                                        rodsCount
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(sectionGap))
-
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            val valueStyle = when {
-                                formattedValue.length <= 9 -> MaterialTheme.typography.displayMedium
-                                formattedValue.length <= 14 -> MaterialTheme.typography.displaySmall
-                                else -> MaterialTheme.typography.displaySmall.copy(
-                                    fontSize = 24.sp,
-                                    lineHeight = 30.sp
-                                )
-                            }
-                            Text(
-                                text = formattedValue,
-                                style = valueStyle,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                textAlign = TextAlign.Center,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = kanjiReading,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                                textAlign = TextAlign.Center,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-
-                            Spacer(modifier = Modifier.height(if (compactHeight) 8.dp else 14.dp))
-
-                            OutlinedButton(
-                                onClick = {
-                                    performHapticFeedback()
-                                    viewModel.speakJapaneseNumber(sorobanValue)
-                                },
-                                enabled = ttsEnabled,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 48.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.primary
-                                ),
-                                border = BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.48f)
-                                ),
-                                shape = MaterialTheme.shapes.medium
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(id = R.string.read_aloud),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-                        Spacer(modifier = Modifier.height(sectionGap))
-
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(7.dp)
-                        ) {
-                            Button(
-                                onClick = ::clearWithUndo,
-                                enabled = sorobanValue != 0L,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 48.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondary,
-                                    contentColor = MaterialTheme.colorScheme.onSecondary
-                                ),
-                                shape = MaterialTheme.shapes.medium
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(7.dp))
-                                Text(stringResource(id = R.string.clear_beads))
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(7.dp)
-                            ) {
-                                SorobanUtilityButton(
-                                    icon = {
-                                        if (isSharing) {
-                                            CircularProgressIndicator(
-                                                modifier = Modifier.size(17.dp),
-                                                strokeWidth = 2.dp
-                                            )
-                                        } else {
-                                            Icon(
-                                                imageVector = Icons.Default.Share,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                        }
-                                    },
-                                    label = stringResource(
-                                        id = if (isSharing) R.string.sharing else R.string.share
-                                    ),
-                                    modifier = Modifier.weight(1f),
-                                    enabled = sorobanValue != 0L && !isSharing,
-                                    onClick = {
-                                        performHapticFeedback()
-                                        isSharing = true
-                                        coroutineScope.launch {
-                                            try {
-                                                runCatching {
-                                                    ShareUtility.createSorobanShareIntent(
-                                                        context = context,
-                                                        value = sorobanValue,
-                                                        kanjiReading = kanjiReading,
-                                                        rodsCount = rodsCount,
-                                                        rodValues = rodValues
-                                                    )
-                                                }.onSuccess { shareIntent ->
-                                                    context.startActivity(
-                                                        Intent.createChooser(
-                                                            shareIntent,
-                                                            context.getString(R.string.share_title)
-                                                        )
-                                                    )
-                                                }.onFailure {
-                                                    Toast.makeText(
-                                                        context,
-                                                        context.getString(R.string.share_failed),
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-                                            } finally {
-                                                isSharing = false
-                                            }
-                                        }
-                                    }
-                                )
-                                SorobanUtilityButton(
-                                    icon = {
-                                        Icon(
-                                            imageVector = Icons.Default.Info,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    },
-                                    label = stringResource(id = R.string.guide),
-                                    modifier = Modifier.weight(1f),
-                                    onClick = {
-                                        performHapticFeedback()
-                                        showInfoDialog = true
-                                    }
-                                )
-                            }
-
-                            Text(
-                                text = stringResource(
-                                    id = if (sorobanValue == 0L) {
-                                        R.string.soroban_interaction_hint
-                                    } else {
-                                        R.string.shake_to_clear
-                                    }
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                        ZenMark(modifier = Modifier.size(if (compactHeight) 23.dp else 28.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.brand_name),
+                            style = if (compactHeight) {
+                                MaterialTheme.typography.titleMedium
+                            } else {
+                                MaterialTheme.typography.headlineSmall
+                            },
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                     }
+
+                    Spacer(modifier = Modifier.height(if (compactHeight) 8.dp else 22.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = pluralStringResource(
+                                id = R.plurals.rods_value,
+                                count = rodsCount,
+                                rodsCount
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(if (compactHeight) 2.dp else 8.dp))
+                        val valueStyle = when {
+                            formattedValue.length <= 8 -> MaterialTheme.typography.displayLarge
+                            formattedValue.length <= 13 -> MaterialTheme.typography.displayMedium
+                            else -> MaterialTheme.typography.displaySmall.copy(
+                                fontSize = 24.sp,
+                                lineHeight = 30.sp
+                            )
+                        }
+                        Text(
+                            text = formattedValue,
+                            style = valueStyle,
+                            fontWeight = FontWeight.Light,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = kanjiReading,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(sectionGap))
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f)
+                    )
+                    Spacer(modifier = Modifier.height(if (compactHeight) 2.dp else 6.dp))
+
+                    SorobanRailAction(
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_soroban_volume_up),
+                                contentDescription = null,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        },
+                        label = stringResource(id = R.string.read_aloud),
+                        enabled = ttsEnabled,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        onClick = {
+                            performHapticFeedback()
+                            viewModel.speakJapaneseNumber(sorobanValue)
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    SorobanRailAction(
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_soroban_cleaning_services),
+                                contentDescription = null,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        },
+                        label = stringResource(id = R.string.clear_beads),
+                        enabled = sorobanValue != 0L,
+                        onClick = ::clearWithUndo
+                    )
+                    SorobanRailAction(
+                        icon = {
+                            if (isSharing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Share,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                        },
+                        label = stringResource(id = if (isSharing) R.string.sharing else R.string.share),
+                        enabled = !isSharing,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        onClick = {
+                            performHapticFeedback()
+                            isSharing = true
+                            coroutineScope.launch {
+                                try {
+                                    runCatching {
+                                        ShareUtility.createSorobanShareIntent(
+                                            context = context,
+                                            value = sorobanValue,
+                                            kanjiReading = kanjiReading,
+                                            rodsCount = rodsCount,
+                                            rodValues = rodValues
+                                        )
+                                    }.onSuccess { shareIntent ->
+                                        context.startActivity(
+                                            Intent.createChooser(
+                                                shareIntent,
+                                                context.getString(R.string.share_title)
+                                            )
+                                        )
+                                    }.onFailure {
+                                        Toast.makeText(
+                                            context,
+                                            context.getString(R.string.share_failed),
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                } finally {
+                                    isSharing = false
+                                }
+                            }
+                        }
+                    )
+                    SorobanRailAction(
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        },
+                        label = stringResource(id = R.string.guide),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        onClick = {
+                            performHapticFeedback()
+                            showInfoDialog = true
+                        }
+                    )
                 }
 
                 SorobanCanvas(
@@ -391,8 +340,9 @@ fun SorobanScreen(
                     ),
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .clip(MaterialTheme.shapes.large)
+                        .fillMaxHeight(contentHeightFraction)
+                        .shadow(5.dp, instrumentShape, clip = false)
+                        .clip(instrumentShape)
                 )
             }
 
@@ -532,30 +482,39 @@ private fun SorobanGuideRow(
 }
 
 @Composable
-private fun SorobanUtilityButton(
+private fun SorobanRailAction(
     icon: @Composable () -> Unit,
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onClick: () -> Unit
 ) {
+    val resolvedContentColor = if (enabled) {
+        contentColor
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+    }
     Surface(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
+        shape = MaterialTheme.shapes.small,
+        color = Color.Transparent,
+        contentColor = resolvedContentColor
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Start
         ) {
             icon()
-            Spacer(modifier = Modifier.width(5.dp))
-            Text(text = label, style = MaterialTheme.typography.labelMedium)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

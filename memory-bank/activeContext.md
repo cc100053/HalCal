@@ -12,18 +12,18 @@ The branch is `main`. The current implementation includes:
 - Safer calculator operator/history behavior, practice submission locking, tax validation, share failure handling, and sensor/share lifecycle fixes.
 - Calculator repeat-equals/no-op handling, capped readable input, and rejection of non-finite loaded results.
 - Practice answer auto-focus, explicit ready/active/finished phases, race-safe timer stopping, capped answer input, and a retained score/accuracy result screen.
-- Soroban clear undo, single-flight share generation, fitted share-card text, responsive landscape control rail, visual reading guide, bounded snackbar, per-rod adjustable accessibility semantics, and disabled unavailable actions.
+- Soroban clear undo, single-flight share generation (including the zero state), fitted share-card text, responsive unboxed landscape control rail, visual reading guide, bounded snackbar, per-rod adjustable accessibility semantics, and disabled unavailable actions.
 - Native Android Back handling in settings, full-row accessible settings toggles, rounded rod slider values, and current edge-to-edge system-bar handling.
 - Tatami planner domain/UI removed; the approximate `畳` area conversion remains.
-- A cohesive premium UI across calculator, tool sheets, practice, settings, history, and landscape soroban: refined light/dark palettes, serif/sans type hierarchy, procedural washi texture and ensō mark, shared card/pill/metric components, responsive safe-area handling, and a layered wooden Canvas soroban.
+- A cohesive premium UI across calculator, tool sheets, practice, settings, history, and landscape soroban: refined light/dark palettes, serif/sans type hierarchy, procedural washi texture and ensō mark, shared card/pill/metric components, responsive safe-area handling, and an AI-selected pale hinoki Canvas soroban with indigo beads, silver rods, and a quiet unboxed control rail.
 - A Japanese-only product interface. Default Android resources, accessibility descriptions, dates, history labels, errors, Kanji readings, and generated share cards are Japanese on every device locale. English resources and Romaji output have been removed.
 
 `firebase-debug.log` is a local runtime artifact and must remain untracked.
 
 ## Last verification
 
-- `./gradlew test assembleDebug lint` — **passed** on 2026-07-17 after the landscape soroban polish pass.
-- Landscape emulator verification on 2026-07-17 used an API 35 Medium Tablet AVD and covered the empty state, bead tap/drag, clear/undo, visual guide, per-rod adjustable semantics, light/dark themes, and a 560 dpi compact-height stress pass without clipping.
+- `./gradlew test assembleDebug lint` — **passed** on 2026-07-17 after the AI-selected hybrid landscape redesign.
+- Landscape emulator verification on 2026-07-17 used an API 35 Medium Tablet AVD and covered the zero state, a multi-trillion active value, bead tap, clear, visual guide, zero-state sharing availability, light/dark themes, and a 560 dpi compact-height stress pass without clipping. The final visual comparison has no remaining P0, P1, or P2 findings.
 - Emulator verification on 2026-07-16 covered practice keyboard focus and scored results, settings system-Back behavior, soroban clear/undo restoration, live accessibility descriptions, share-card creation and chooser launch, and light/dark system-bar rendering.
 - Source audit found no user-visible English or Romaji literals.
 - Emulator visual verification completed on 2026-07-16 using an API 36 Pixel 7 AVD with the device locale set to `en-US`. The calculator still rendered Japanese-only labels, including the new `全消` and `一字` keys, without clipping.

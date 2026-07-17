@@ -8,7 +8,7 @@
 The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese minimalist aesthetic focusing on natural asymmetry, simplicity, and warmth):
 - **Color Palette**: Warm washi (`#F4F0E7`), sumi ink (`#25231F`), moss (`#586A55`), aizome indigo (`#3E5363`), and a restrained sakura accent (`#A9676D`), with a dedicated charcoal-paper dark theme.
 - **Typography**: System serif for expressive headings and system sans-serif for controls, body copy, and precise numeric displays, preserving reliable Japanese glyph coverage without bundled font weight.
-- **Crafted Surfaces**: A deterministic Compose-drawn washi texture, vector ensō mark, softly raised cards, and a layered wooden soroban frame provide depth without raster UI assets.
+- **Crafted Surfaces**: A deterministic Compose-drawn washi texture, vector ensō mark, softly raised cards, and a pale hinoki soroban with indigo beads and silver rods provide depth without raster UI assets.
 - **Micro-interactions**: Tactile feedback, bead click sounds, spring-based bead motion, deliberate destructive-action confirmation, and short fade transitions reinforce state without visual noise.
 - **Responsive Layout**: System safe areas, 48dp-class touch targets, capped tablet keypad width, scrollable tool sheets, and responsive landscape controls keep the interface composed across phones and tablets.
 
@@ -19,11 +19,12 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 ### 1. Interactive Soroban Mode (Landscape)
 - **Traditional Layout**: Modern standard 1-5 abacus (1 heaven bead + 4 earth beads per rod).
 - **Responsive Rods**: Configurable from 7 to 17 rods with traditional alignment indicators/dots (dots on every 4th rod representing thousands, millions, etc.).
+- **Quiet Control Rail**: A slim, unboxed landscape rail keeps the value, Japanese reading, and essential actions visible without competing with the instrument.
 - **Satisfying Interaction**: Custom canvas rendering of bi-conical beads (*soroban-dama*) with drag-and-slide gestures, haptic pops, and spring-snapping physics.
 - **Real-Time Reading**: Displays the numerical value alongside its Japanese Kanji reading (e.g., `十二万三千四百五十六`).
 - **Text-to-Speech (TTS)**: Built-in voice synthesizer that speaks out numbers in native Japanese pronunciation.
 - **Shake to Reset**: Integrates Android's accelerometer; shaking or using the clear control resets the frame with an immediate undo action.
-- **Abacus Sharing**: Generates a fitted off-screen image card of the current state, prevents duplicate share jobs, and opens the Android sharing sheet.
+- **Abacus Sharing**: Generates a fitted off-screen image card of the current state—including zero—prevents duplicate share jobs, and opens the Android sharing sheet.
 
 ### 2. Normal Calculator Mode (Portrait)
 - Quiet-luxury display hierarchy with a centered ensō wordmark and warm, rounded tactile keys.
