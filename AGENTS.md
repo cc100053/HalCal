@@ -75,6 +75,7 @@ Choose checks proportional to the change:
 ## Commit and push policy
 
 - After every completed logical change, create a Git commit and push it to the configured remote before ending the task.
+- The repository owner grants standing authorization to push completed, in-scope commits to the configured remote without requesting approval after each edit.
 - Stage and commit only files that belong to the change. Never include unrelated or pre-existing user changes merely to obtain a clean working tree.
 - When one session contains distinct features or independently meaningful changes, split them into separate focused commits and push each commit after its relevant checks pass.
 - Use concise commit messages that describe the outcome. Inspect the staged diff before committing.
