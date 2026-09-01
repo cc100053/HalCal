@@ -63,6 +63,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+private val binaryOperator = Regex("(?<=[0-9.)])([+\\-*/])")
+
+/** Spaces out binary operators and swaps in the calculator glyphs: "5*3" -> "5 × 3". */
+private fun formatExpression(raw: String): String = binaryOperator
+    .replace(raw) { " ${it.value} " }
+    .replace("*", "×")
+    .replace("/", "÷")
+    .trim()
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculatorScreen(
@@ -118,7 +127,8 @@ fun CalculatorScreen(
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = expr.replace("*", "×").replace("/", "÷").ifBlank { "—" },
+                    // Stays empty while typing; the completed expression appears once "=" is pressed.
+                    text = formatExpression(expr).ifBlank { " " },
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.End,
@@ -128,7 +138,7 @@ fun CalculatorScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = displayVal,
+                    text = formatExpression(displayVal),
                     style = MaterialTheme.typography.displayLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.End,
@@ -418,7 +428,7 @@ fun HistoryBottomSheetContent(
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = item.expression.replace("*", "×").replace("/", "÷"),
+                                text = formatExpression(item.expression),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

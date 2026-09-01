@@ -5,6 +5,9 @@ import java.util.Locale
 data class CalculatorState(
     val expression: String,
     val display: String,
+    /** Single-line input as typed: "5+", "5+3", or the result once "=" has been pressed. */
+    val entry: String,
+    val isResultDisplayed: Boolean,
     val completedExpression: String? = null,
     val hasError: Boolean = false
 )
@@ -36,6 +39,8 @@ class CalculatorEngine {
         return CalculatorState(
             expression = expression,
             display = display,
+            entry = currentEntry(),
+            isResultDisplayed = isResultDisplayed,
             completedExpression = completedExpression,
             hasError = display == ERROR_DISPLAY
         )
@@ -50,7 +55,19 @@ class CalculatorEngine {
         display = normalized
         isResultDisplayed = true
         isAwaitingOperand = false
-        return CalculatorState(expression, display)
+        return CalculatorState(
+            expression = expression,
+            display = display,
+            entry = currentEntry(),
+            isResultDisplayed = isResultDisplayed
+        )
+    }
+
+    /** Everything typed so far on one line; the trailing operand is dropped while it is still "0". */
+    private fun currentEntry(): String = when {
+        isResultDisplayed -> display
+        isAwaitingOperand -> expression
+        else -> expression + display
     }
 
     private fun reset() {

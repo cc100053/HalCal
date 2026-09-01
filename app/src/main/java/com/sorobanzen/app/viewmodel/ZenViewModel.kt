@@ -7,6 +7,7 @@ import com.sorobanzen.app.data.AppPreferences
 import com.sorobanzen.app.data.HistoryDao
 import com.sorobanzen.app.data.HistoryEntity
 import com.sorobanzen.app.domain.CalculatorEngine
+import com.sorobanzen.app.domain.CalculatorState
 import com.sorobanzen.app.domain.PracticeSession
 import com.sorobanzen.app.domain.PracticeSubmission
 import com.sorobanzen.app.domain.SorobanEngine
@@ -37,9 +38,11 @@ class ZenViewModel(
     private val calculator = CalculatorEngine()
 
     // --- Calculator Portrait States ---
+    /** Completed expression, shown only once "=" has produced a result. */
     private val _expression = MutableStateFlow("")
     val expression: StateFlow<String> = _expression.asStateFlow()
 
+    /** The single input line: the expression while typing, the result after "=". */
     private val _displayText = MutableStateFlow("0")
     val displayText: StateFlow<String> = _displayText.asStateFlow()
 
@@ -129,8 +132,7 @@ class ZenViewModel(
     // --- Calculator Operations ---
     fun onCalculatorKeyPress(key: String) {
         val state = calculator.press(key)
-        _expression.value = state.expression
-        _displayText.value = state.display
+        publishCalculatorState(state)
 
         state.completedExpression?.let { completedExpression ->
             state.display.toLongOrNull()?.let { result ->
@@ -144,8 +146,12 @@ class ZenViewModel(
 
     fun loadCalculatorResult(result: String) {
         val state = calculator.loadResult(result)
-        _expression.value = state.expression
-        _displayText.value = state.display
+        publishCalculatorState(state)
+    }
+
+    private fun publishCalculatorState(state: CalculatorState) {
+        _expression.value = if (state.isResultDisplayed) state.expression else ""
+        _displayText.value = state.entry.ifEmpty { "0" }
     }
 
     // --- Soroban Operations ---

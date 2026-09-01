@@ -2,6 +2,7 @@ package com.sorobanzen.app.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CalculatorEngineTest {
@@ -102,5 +103,23 @@ class CalculatorEngineTest {
         val result = calculator.press("=")
 
         assertEquals("2", result.display)
+    }
+
+    @Test
+    fun `the entry line holds the whole input until equals produces a result`() {
+        val calculator = CalculatorEngine()
+
+        assertEquals("5", calculator.press("5").entry)
+        // Pressing an operator keeps the input on the entry line instead of clearing it.
+        assertEquals("5+", calculator.press("+").entry)
+        assertEquals("5+3", calculator.press("3").entry)
+
+        val result = calculator.press("=")
+        assertEquals("8", result.entry)
+        assertEquals("5+3", result.expression)
+        assertTrue(result.isResultDisplayed)
+
+        // Typing again starts a fresh entry line.
+        assertEquals("2", calculator.press("2").entry)
     }
 }
