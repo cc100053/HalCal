@@ -85,4 +85,22 @@ class CalculatorEngineTest {
 
         assertEquals("9999999999999999", calculator.press("9").display)
     }
+
+    @Test
+    fun `sign toggle flips the operand and keeps zero untouched`() {
+        val calculator = CalculatorEngine()
+
+        assertEquals("0", calculator.press("±").display)
+
+        calculator.press("5")
+        assertEquals("-5", calculator.press("±").display)
+        assertEquals("5", calculator.press("±").display)
+
+        calculator.press("+")
+        calculator.press("3")
+        calculator.press("±")
+        val result = calculator.press("=")
+
+        assertEquals("2", result.display)
+    }
 }

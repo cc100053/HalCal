@@ -29,6 +29,7 @@ class CalculatorEngine {
             "+", "-", "×", "÷" -> setOperator(key)
             "=" -> completedExpression = evaluate()
             "." -> appendDecimalPoint()
+            "±" -> toggleSign()
             in "0".."9" -> appendDigit(key)
         }
 
@@ -104,6 +105,12 @@ class CalculatorEngine {
         expression = fullExpression
         isResultDisplayed = true
         return fullExpression
+    }
+
+    private fun toggleSign() {
+        if (display == ERROR_DISPLAY || display.trimStart('-').trimEnd('.', '0').isEmpty()) return
+        display = if (display.startsWith("-")) display.drop(1) else "-$display"
+        isAwaitingOperand = false
     }
 
     private fun appendDecimalPoint() {

@@ -163,12 +163,12 @@ fun CalculatorScreen(
                     activeToolSheet = "unit"
                 }
                 ToolBadge(
-                    mark = "算",
-                    label = stringResource(id = R.string.practice_short),
+                    mark = "±",
+                    label = stringResource(id = R.string.sign_toggle_short),
                     modifier = Modifier.weight(1f)
                 ) {
                     performHapticFeedback()
-                    activeToolSheet = "practice"
+                    viewModel.onCalculatorKeyPress("±")
                 }
             }
 

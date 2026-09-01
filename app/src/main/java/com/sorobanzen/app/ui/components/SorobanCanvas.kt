@@ -17,7 +17,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -58,6 +63,8 @@ fun SorobanCanvas(
     val hapticFeedback = LocalHapticFeedback.current
     val view = LocalView.current
     val isDark = isSystemInDarkTheme()
+
+    val latestRods by rememberUpdatedState(rodValues)
 
     val heavenAnimatables = remember(rodsCount) {
         List(rodsCount) { Animatable(0f) }
@@ -125,7 +132,6 @@ fun SorobanCanvas(
         val beamHeight = (canvasHeight * 0.050f).coerceIn(20f, 40f)
         val beamTopY = innerTop + innerHeight * 0.38f
         val beamBottomY = beamTopY + beamHeight
-        val lowerHeight = innerBottom - beamBottomY
         val beadWidth = (rodSpacing * 0.77f)
             .coerceAtMost(canvasHeight * 0.14f)
             .coerceAtLeast(20f)
@@ -135,8 +141,17 @@ fun SorobanCanvas(
 
         fun rodX(index: Int): Float = innerLeft + rodSpacing * index
 
+        val heavenInactiveY = innerTop + beadHeight / 2 + 12f
+        val heavenActiveY = beamTopY - beadHeight / 2 - 9f
+
+        fun earthActiveY(beadIndex: Int): Float =
+            beamBottomY + beadHeight / 2 + 9f + beadIndex * (beadHeight + beadGap)
+
+        fun earthInactiveY(beadIndex: Int): Float =
+            innerBottom - beadHeight / 2 - 10f - (3 - beadIndex) * (beadHeight + beadGap)
+
         fun commitRodValue(rodIndex: Int, nextValue: Int): Boolean {
-            val currentValue = rodValues.getOrElse(rodIndex) { 0 }
+            val currentValue = latestRods.getOrElse(rodIndex) { 0 }
             val coercedValue = nextValue.coerceIn(0, 9)
             if (coercedValue == currentValue) return false
 
@@ -150,29 +165,28 @@ fun SorobanCanvas(
             return true
         }
 
-        fun handleTouch(touchX: Float, touchY: Float) {
-            val rodIndex = ((touchX - innerLeft) / rodSpacing)
-                .roundToInt()
-                .coerceIn(0, rodsCount - 1)
-            val currentValue = rodValues.getOrElse(rodIndex) { 0 }
+        fun rodAt(touchX: Float): Int = ((touchX - innerLeft) / rodSpacing)
+            .roundToInt()
+            .coerceIn(0, rodsCount - 1)
+
+        fun handleTap(touchX: Float, touchY: Float) {
+            val rodIndex = rodAt(touchX)
+            val currentValue = latestRods.getOrElse(rodIndex) { 0 }
             val heavenActive = currentValue >= 5
             val earthActiveCount = currentValue % 5
             var nextValue = currentValue
 
             if (touchY < beamTopY) {
-                val targetActive = touchY > (innerTop + beamTopY) / 2
-                if (targetActive != heavenActive) {
-                    nextValue = (if (targetActive) 5 else 0) + earthActiveCount
-                }
+                // The upper deck holds a single bead, so any touch there flips it.
+                nextValue = (if (heavenActive) 0 else 5) + earthActiveCount
             } else if (touchY > beamBottomY) {
-                val fraction = ((touchY - beamBottomY) / lowerHeight).coerceIn(0f, 1f)
-                val targetEarthCount = when {
-                    fraction < 0.16f -> 4
-                    fraction < 0.40f -> 3
-                    fraction < 0.64f -> 2
-                    fraction < 0.86f -> 1
-                    else -> 0
-                }
+                val targetEarthCount = earthBeadTarget(
+                    touchY = touchY,
+                    activeCount = earthActiveCount,
+                    firstActiveY = earthActiveY(0),
+                    lastInactiveY = earthInactiveY(3),
+                    beadPitch = beadHeight + beadGap
+                )
                 if (targetEarthCount != earthActiveCount) {
                     nextValue = (if (heavenActive) 5 else 0) + targetEarthCount
                 }
@@ -181,15 +195,74 @@ fun SorobanCanvas(
             commitRodValue(rodIndex, nextValue)
         }
 
+        // A drag grabs one bead on one rod and carries it; the target is derived from the finger
+        // position alone, so dragging back before releasing puts the bead where it started.
+        var dragRod by remember { mutableIntStateOf(-1) }
+        var dragStartValue by remember { mutableIntStateOf(0) }
+        var dragGrabbedBead by remember { mutableIntStateOf(0) }
+        var dragOnHeaven by remember { mutableStateOf(false) }
+
+        fun beginDrag(touchX: Float, touchY: Float) {
+            if (touchY in beamTopY..beamBottomY) {
+                dragRod = -1
+                return
+            }
+            dragRod = rodAt(touchX)
+            dragStartValue = latestRods.getOrElse(dragRod) { 0 }
+            dragOnHeaven = touchY < beamTopY
+            dragGrabbedBead = if (dragOnHeaven) {
+                0
+            } else {
+                nearestEarthBead(
+                    touchY = touchY,
+                    activeCount = dragStartValue % 5,
+                    firstActiveY = earthActiveY(0),
+                    lastInactiveY = earthInactiveY(3),
+                    beadPitch = beadHeight + beadGap
+                )
+            }
+        }
+
+        fun handleDrag(touchY: Float) {
+            if (dragRod < 0) return
+            val startHeaven = dragStartValue >= 5
+            val startEarth = dragStartValue % 5
+
+            val nextValue = if (dragOnHeaven) {
+                val raisedY = heavenActiveY
+                val loweredY = heavenInactiveY
+                val midpoint = (raisedY + loweredY) / 2f
+                val movedOver = if (startHeaven) touchY < midpoint else touchY > midpoint
+                (if (startHeaven != movedOver) 5 else 0) + startEarth
+            } else {
+                val targetEarthCount = earthDragTarget(
+                    touchY = touchY,
+                    startCount = startEarth,
+                    grabbedIndex = dragGrabbedBead,
+                    firstActiveY = earthActiveY(0),
+                    lastInactiveY = earthInactiveY(3),
+                    beadPitch = beadHeight + beadGap
+                )
+                (if (startHeaven) 5 else 0) + targetEarthCount
+            }
+
+            commitRodValue(dragRod, nextValue)
+        }
+
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(rodsCount, rodValues, soundEnabled, hapticsEnabled) {
-                    detectTapGestures { handleTouch(it.x, it.y) }
+                .pointerInput(rodsCount, canvasWidth, canvasHeight, soundEnabled, hapticsEnabled) {
+                    detectTapGestures { handleTap(it.x, it.y) }
                 }
-                .pointerInput(rodsCount, rodValues, soundEnabled, hapticsEnabled) {
-                    detectDragGestures { change, _ ->
-                        handleTouch(change.position.x, change.position.y)
+                .pointerInput(rodsCount, canvasWidth, canvasHeight, soundEnabled, hapticsEnabled) {
+                    detectDragGestures(
+                        onDragStart = { offset -> beginDrag(offset.x, offset.y) },
+                        onDragEnd = { dragRod = -1 },
+                        onDragCancel = { dragRod = -1 }
+                    ) { change, _ ->
+                        change.consume()
+                        handleDrag(change.position.y)
                     }
                 }
         ) {
@@ -304,9 +377,7 @@ fun SorobanCanvas(
             repeat(rodsCount) { index ->
                 val x = rodX(index)
                 val heavenFactor = heavenAnimatables[index].value
-                val minHeavenY = innerTop + beadHeight / 2 + 12f
-                val maxHeavenY = beamTopY - beadHeight / 2 - 9f
-                val heavenY = minHeavenY + (maxHeavenY - minHeavenY) * heavenFactor
+                val heavenY = heavenInactiveY + (heavenActiveY - heavenInactiveY) * heavenFactor
 
                 drawSorobanBead(
                     centerX = x,
@@ -320,10 +391,8 @@ fun SorobanCanvas(
 
                 repeat(4) { beadIndex ->
                     val factor = earthAnimatables[index][beadIndex].value
-                    val activeY = beamBottomY + beadHeight / 2 + 9f +
-                        beadIndex * (beadHeight + beadGap)
-                    val inactiveY = innerBottom - beadHeight / 2 - 10f -
-                        (3 - beadIndex) * (beadHeight + beadGap)
+                    val activeY = earthActiveY(beadIndex)
+                    val inactiveY = earthInactiveY(beadIndex)
                     val beadY = inactiveY + (activeY - inactiveY) * factor
 
                     drawSorobanBead(
@@ -375,6 +444,72 @@ fun SorobanCanvas(
                 )
             }
         }
+    }
+}
+
+/** Center of earth bead [beadIndex] for a rod holding [activeCount] raised beads. */
+internal fun earthBeadCenterY(
+    beadIndex: Int,
+    activeCount: Int,
+    firstActiveY: Float,
+    lastInactiveY: Float,
+    beadPitch: Float
+): Float = if (beadIndex < activeCount) {
+    firstActiveY + beadIndex * beadPitch
+} else {
+    lastInactiveY - (3 - beadIndex) * beadPitch
+}
+
+/** The earth bead drawn closest to [touchY], i.e. the one a finger there is on. */
+internal fun nearestEarthBead(
+    touchY: Float,
+    activeCount: Int,
+    firstActiveY: Float,
+    lastInactiveY: Float,
+    beadPitch: Float
+): Int = (0..3).minByOrNull { beadIndex ->
+    kotlin.math.abs(
+        touchY - earthBeadCenterY(beadIndex, activeCount, firstActiveY, lastInactiveY, beadPitch)
+    )
+} ?: 0
+
+/**
+ * Earth-bead count a tap at [touchY] should produce: the touched bead flips, and pushing a raised
+ * bead down carries the beads above it while lifting a lowered bead carries the beads below it.
+ */
+internal fun earthBeadTarget(
+    touchY: Float,
+    activeCount: Int,
+    firstActiveY: Float,
+    lastInactiveY: Float,
+    beadPitch: Float
+): Int {
+    val nearest = nearestEarthBead(touchY, activeCount, firstActiveY, lastInactiveY, beadPitch)
+    return if (nearest < activeCount) nearest else nearest + 1
+}
+
+/**
+ * Earth-bead count while dragging the bead grabbed at drag start. The bead follows the finger and
+ * settles into its other slot once the finger has carried it past the midpoint of its travel, so
+ * the target only ever depends on the finger position — dragging back undoes it.
+ */
+internal fun earthDragTarget(
+    touchY: Float,
+    startCount: Int,
+    grabbedIndex: Int,
+    firstActiveY: Float,
+    lastInactiveY: Float,
+    beadPitch: Float
+): Int {
+    val wasRaised = grabbedIndex < startCount
+    val raisedY = firstActiveY + grabbedIndex * beadPitch
+    val loweredY = lastInactiveY - (3 - grabbedIndex) * beadPitch
+    val midpoint = (raisedY + loweredY) / 2f
+    val movedOver = if (wasRaised) touchY > midpoint else touchY < midpoint
+    return when {
+        !movedOver -> startCount
+        wasRaised -> grabbedIndex
+        else -> grabbedIndex + 1
     }
 }
 
