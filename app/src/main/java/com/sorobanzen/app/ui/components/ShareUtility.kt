@@ -112,9 +112,10 @@ object ShareUtility {
             val beadHeight = (abacusHeight * 0.08f).coerceAtLeast(16f)
             val beadWidth = rodWidth * 0.72f
 
-            // Draw the pale hinoki frame used by the interactive soroban.
+            // 黒檀と骨: the same ebony frame, bone field and lacquer beads as the instrument,
+            // flattened to solid fills — a share card is read at a glance, not inspected.
             val woodPaint = Paint().apply {
-                color = Color.parseColor("#E7D2A8")
+                color = Color.parseColor("#181310")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
@@ -122,7 +123,7 @@ object ShareUtility {
 
             // Draw inner metal/rod background
             val innerBgPaint = Paint().apply {
-                color = Color.parseColor("#F0ECE3")
+                color = Color.parseColor("#EFE9DA")
                 style = Paint.Style.FILL
             }
             canvas.drawRect(
@@ -135,7 +136,7 @@ object ShareUtility {
 
             // Draw Divider Beam (Horizontal)
             val beamPaint = Paint().apply {
-                color = Color.parseColor("#DEC69B")
+                color = Color.parseColor("#1B1511")
                 style = Paint.Style.FILL
             }
             canvas.drawRect(
@@ -148,18 +149,18 @@ object ShareUtility {
 
             // Paint definitions for Rods and Beads
             val rodPaint = Paint().apply {
-                color = Color.parseColor("#92918B")
+                color = Color.parseColor("#C9A96A")
                 strokeWidth = 4f
             }
 
             val beadPaint = Paint().apply {
-                color = Color.parseColor("#254A7A")
+                color = Color.parseColor("#1A1714")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
 
             val dotPaint = Paint().apply {
-                color = Color.parseColor("#315A8D")
+                color = Color.parseColor("#C9A96A")
                 style = Paint.Style.FILL
                 isAntiAlias = true
             }
@@ -251,34 +252,15 @@ object ShareUtility {
         paint: Paint
     ) {
         val left = centerX - beadWidth / 2
-        val right = centerX + beadWidth / 2
         val top = centerY - beadHeight / 2
-        val bottom = centerY + beadHeight / 2
-        val midY = centerY
 
+        // The instrument's own silhouette, so a shared board is the board the user was using.
         val path = Path().apply {
-            moveTo(left + beadWidth * 0.29f, top)
-            quadTo(
-                left + beadWidth * 0.22f,
-                top,
-                left + beadWidth * 0.16f,
-                top + beadHeight * 0.17f
-            )
-            lineTo(left + beadWidth * 0.035f, midY - beadHeight * 0.1f)
-            quadTo(left, midY, left + beadWidth * 0.035f, midY + beadHeight * 0.1f)
-            lineTo(left + beadWidth * 0.16f, bottom - beadHeight * 0.17f)
-            quadTo(left + beadWidth * 0.22f, bottom, left + beadWidth * 0.29f, bottom)
-            lineTo(right - beadWidth * 0.29f, bottom)
-            quadTo(
-                right - beadWidth * 0.22f,
-                bottom,
-                right - beadWidth * 0.16f,
-                bottom - beadHeight * 0.17f
-            )
-            lineTo(right - beadWidth * 0.035f, midY + beadHeight * 0.1f)
-            quadTo(right, midY, right - beadWidth * 0.035f, midY - beadHeight * 0.1f)
-            lineTo(right - beadWidth * 0.16f, top + beadHeight * 0.17f)
-            quadTo(right - beadWidth * 0.22f, top, right - beadWidth * 0.29f, top)
+            BeadOutline.forEachIndexed { index, (fx, fy) ->
+                val x = left + beadWidth * fx
+                val y = top + beadHeight * fy
+                if (index == 0) moveTo(x, y) else lineTo(x, y)
+            }
             close()
         }
         canvas.drawPath(path, paint)

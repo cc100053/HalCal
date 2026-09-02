@@ -8,7 +8,7 @@
 The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese minimalist aesthetic focusing on natural asymmetry, simplicity, and warmth):
 - **Color Palette**: Warm washi (`#F4F0E7`), sumi ink (`#25231F`), moss (`#586A55`), aizome indigo (`#3E5363`), and a restrained sakura accent (`#A9676D`), with a dedicated charcoal-paper dark theme.
 - **Typography**: System serif for expressive headings and system sans-serif for controls, body copy, and precise numeric displays, preserving reliable Japanese glyph coverage without bundled font weight.
-- **Crafted Surfaces**: A deterministic Compose-drawn washi texture, vector ensō mark, softly raised cards, and a pale hinoki soroban with indigo beads and silver rods provide depth without raster UI assets.
+- **Crafted Surfaces**: A deterministic Compose-drawn washi texture, vector ensō mark, softly raised cards, and a 黒檀と骨 soroban — ebony-lacquer frame, brass inlay and rods, bone reckoning field, black-lacquer bi-conical beads — provide depth without raster UI assets.
 - **Micro-interactions**: Tactile feedback, bead click sounds, spring-based bead motion, deliberate destructive-action confirmation, and short fade transitions reinforce state without visual noise.
 - **Responsive Layout**: System safe areas, 48dp-class touch targets, capped tablet keypad width, scrollable tool sheets, and responsive landscape controls keep the interface composed across phones and tablets.
 

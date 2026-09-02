@@ -146,7 +146,8 @@ fun SorobanScreen(
             } else {
                 (maxWidth * 0.25f).coerceIn(176.dp, 216.dp)
             }
-            val instrumentShape = RoundedCornerShape(if (spaciousLayout) 18.dp else 14.dp)
+            // The ebony board's own corner radius, 9 units of its 352-unit height.
+            val instrumentShape = RoundedCornerShape(8.dp)
             val contentHeightFraction = if (spaciousLayout) 0.86f else 1f
 
             Row(
@@ -318,12 +319,19 @@ fun SorobanScreen(
                     )
                 }
 
-                Box(
+                BoxWithConstraints(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight(),
                     contentAlignment = Alignment.Center
                 ) {
+                    // The ebony board is wide and shallow, so on most screens its width runs out
+                    // before its height does. Fit the fixed aspect to whichever binds first.
+                    val boardAspect = sorobanBoardAspect(rodsCount)
+                    val boardHeight = minOf(
+                        maxHeight * contentHeightFraction,
+                        maxWidth / boardAspect
+                    )
                     SorobanCanvas(
                         rodsCount = rodsCount,
                         rodValues = rodValues,
@@ -335,12 +343,9 @@ fun SorobanScreen(
                             String.format(Locale.ROOT, "%,d", sorobanValue)
                         ),
                         modifier = Modifier
-                            .fillMaxHeight(contentHeightFraction)
-                            .aspectRatio(
-                                ratio = sorobanBoardAspect(rodsCount),
-                                matchHeightConstraintsFirst = true
-                            )
-                            .shadow(5.dp, instrumentShape, clip = false)
+                            .height(boardHeight)
+                            .aspectRatio(boardAspect)
+                            .shadow(10.dp, instrumentShape, clip = false)
                             .clip(instrumentShape)
                     )
                 }

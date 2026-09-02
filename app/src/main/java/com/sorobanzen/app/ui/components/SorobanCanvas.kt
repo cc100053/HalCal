@@ -1,14 +1,15 @@
 package com.sorobanzen.app.ui.components
 
+import android.provider.Settings
 import android.view.SoundEffectConstants
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -47,32 +49,119 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
 import com.sorobanzen.app.R
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlinx.coroutines.launch
 
-/**
- * Reckoning beam thickness, as a fraction of the board height. This is the only knob: there is no
- * upper clamp, because a ceiling silently swallows changes to the fraction once it binds — the
- * board then ignores the number you edited.
+/*
+ * 黒檀と骨 — Ebony & Bone.
+ *
+ * Every number below is in the design reference's own coordinate space: a 768 x 352 board. At
+ * draw time one design unit becomes `boardHeight / BOARD_HEIGHT` canvas pixels, so the whole
+ * instrument scales as one piece and the handoff can still be read line by line against the code.
+ * Only the rod pitch depends on how many rods there are.
  */
-private const val BEAM_HEIGHT_FRACTION = 0.200f
+private const val BOARD_HEIGHT = 352f
+private const val BOARD_RADIUS = 9f
+
+private const val INLAY_INSET_X = 20f
+private const val INLAY_INSET_Y = 12f
+private const val INLAY_RADIUS = 4f
+
+private const val FIELD_INSET_X = 34f
+private const val FIELD_INSET_Y = 26f
+private const val FIELD_RADIUS = 2f
+/** How far the field's recessed inner shadow reaches down from its top edge. */
+private const val FIELD_RECESS = 13f
+
+private const val BEAM_TOP = 140f
+private const val BEAM_HEIGHT = 18f
+/** How far the beam's shadow falls onto the field below it. */
+private const val BEAM_SHADOW = 16f
+
+private const val BEAD_WIDTH = 80f
+private const val BEAD_HEIGHT = 30f
+private const val BEAD_GAP = 5f
+private const val BEAD_TO_BEAM = 8f
+private const val BEAD_TO_FIELD = 10f
+
+private const val ROD_WIDTH = 2f
+private const val MARKER_SIZE = 8f
+
+/** Outer bead half-width plus the margin the design keeps between it and the field edge. */
+private const val BEAD_EDGE = BEAD_WIDTH / 2f + 8f
+
+/** The reference board's pitch, `(700 - 2 * BEAD_EDGE) / 6` across its seven rods. */
+private const val ROD_PITCH = 100.667f
+
+// Ebony frame.
+private val EbonyLight = Color(0xFF2A231C)
+private val EbonyMid = Color(0xFF181310)
+private val EbonyDark = Color(0xFF0C0908)
+private val BeamLight = Color(0xFF241D17)
+private val BeamDark = Color(0xFF120E0B)
+
+// Bone reckoning field.
+private val BoneLight = Color(0xFFEFE9DA)
+private val BoneDark = Color(0xFFE2DAC6)
+
+// Brass.
+private val Brass = Color(0xFFC9A96A)
+private val BrassSheen = Color(0xFFD6BA8C)
+private val BrassMarkerLight = Color(0xFFF0DEB0)
+private val BrassMarkerDark = Color(0xFFB08A4C)
+private val RodStops = arrayOf(
+    0f to Color(0xFF6A5632),
+    0.42f to Brass,
+    0.60f to Color(0xFFF4E6C4),
+    0.78f to Color(0xFFAF8E4C),
+    1f to Color(0xFF5C4A2A)
+)
+
+// Black-lacquer bead.
+private val LacquerLight = Color(0xFF3A342E)
+private val LacquerMid = Color(0xFF1A1714)
+private val LacquerDark = Color(0xFF0B0A09)
+private val BeadRidge = Color(0xFFE2CCA4)
+private val BeadSpecular = Color(0xFFF8E8C6)
+private val BeadBounce = Color(0xFFFFF6E0)
+
+// Shadows.
+private val BeamShadowColor = Color(0xFF120E0A)
+private val BeadShadowColor = Color(0xFF18120C)
+private val FieldRecessColor = Color(0xFF1E160E)
+
+/** Rings used to fake a blurred highlight. Fewer than this and the steps band visibly. */
+private const val SOFT_ELLIPSE_RINGS = 8
 
 /**
- * Where the beam sits in the field. The upper deck holds one bead and its travel, so it needs far
- * less room than the lower deck's four — and a thicker beam has to take its space from somewhere.
+ * Bead travel. The overshoot past 1 is deliberate: the bead arrives with a small mechanical
+ * click into place rather than easing to a stop.
  */
-private const val HEAVEN_DECK_FRACTION = 0.20f
+private val BeadEasing = CubicBezierEasing(0.2f, 1.5f, 0.34f, 1f)
+private const val BEAD_TRAVEL_MILLIS = 360
 
 /**
- * Board width per rod, as a multiple of board height, plus the frame. Sizing the board to its rods
- * keeps them a bead's width apart instead of spreading them across whatever width is going spare.
+ * The bi-conical silhouette, as fractions of the bead's box. Straight segments throughout: the
+ * profile pinches to a point at the vertical centre of each side and runs flat across the middle
+ * 40% of the top and bottom faces.
  */
-private const val BOARD_ASPECT_PER_ROD = 0.16f
-private const val BOARD_ASPECT_FRAME = 0.13f
+internal val BeadOutline = listOf(
+    0.30f to 0f, 0.14f to 0.15f, 0.02f to 0.42f, 0f to 0.50f,
+    0.02f to 0.58f, 0.14f to 0.85f, 0.30f to 1f, 0.70f to 1f,
+    0.86f to 0.85f, 0.98f to 0.58f, 1f to 0.50f, 0.98f to 0.42f,
+    0.86f to 0.15f, 0.70f to 0f
+)
 
-/** Aspect ratio a board of [rodsCount] rods wants, so beads sit close without crowding. */
-fun sorobanBoardAspect(rodsCount: Int): Float =
-    BOARD_ASPECT_PER_ROD * rodsCount + BOARD_ASPECT_FRAME
+/** Aspect ratio a board of [rodsCount] rods wants: the design's frame plus one pitch per rod. */
+fun sorobanBoardAspect(rodsCount: Int): Float {
+    val fieldWidth = 2f * BEAD_EDGE + ROD_PITCH * (rodsCount - 1).coerceAtLeast(0)
+    return (fieldWidth + 2f * FIELD_INSET_X) / BOARD_HEIGHT
+}
 
 @Composable
 fun SorobanCanvas(
@@ -86,9 +175,21 @@ fun SorobanCanvas(
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val view = LocalView.current
-    val isDark = isSystemInDarkTheme()
+    val context = LocalContext.current
 
     val latestRods by rememberUpdatedState(rodValues)
+
+    // A device with animations turned off gets the bead's new position with no travel at all.
+    val reduceMotion = remember(context) {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        ) == 0f
+    }
+    val beadSpec = remember(reduceMotion) {
+        if (reduceMotion) snap() else tween<Float>(BEAD_TRAVEL_MILLIS, easing = BeadEasing)
+    }
 
     val heavenAnimatables = remember(rodsCount) {
         List(rodsCount) { Animatable(0f) }
@@ -97,45 +198,26 @@ fun SorobanCanvas(
         List(rodsCount) { List(4) { Animatable(0f) } }
     }
 
-    LaunchedEffect(rodValues, rodsCount) {
+    LaunchedEffect(rodValues, rodsCount, beadSpec) {
         for (index in 0 until rodsCount.coerceAtMost(rodValues.size)) {
             val rodValue = rodValues[index]
             launch {
                 heavenAnimatables[index].animateTo(
                     targetValue = if (rodValue >= 5) 1f else 0f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
+                    animationSpec = beadSpec
                 )
             }
             repeat(4) { beadIndex ->
                 launch {
                     earthAnimatables[index][beadIndex].animateTo(
                         targetValue = if (beadIndex < rodValue % 5) 1f else 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        )
+                        animationSpec = beadSpec
                     )
                 }
             }
         }
     }
 
-    val frameHighlight = if (isDark) Color(0xFF9A8466) else Color(0xFFF5E8CC)
-    val frameLight = if (isDark) Color(0xFF78654C) else Color(0xFFE9D5AE)
-    val frameMid = if (isDark) Color(0xFF5E4D3A) else Color(0xFFDEC79B)
-    val frameDark = if (isDark) Color(0xFF3C3127) else Color(0xFFC5A474)
-    val fieldTop = if (isDark) Color(0xFF211F1B) else Color(0xFFF2EEE5)
-    val fieldBottom = if (isDark) Color(0xFF171612) else Color(0xFFE9E3D8)
-    val rodLight = if (isDark) Color(0xFFE3E0D8) else Color(0xFFF4F2ED)
-    val rodColor = if (isDark) Color(0xFFAAA69D) else Color(0xFF9D9B94)
-    val rodDark = if (isDark) Color(0xFF56534E) else Color(0xFF5E5D58)
-    val beamLight = if (isDark) Color(0xFF8B7456) else Color(0xFFF1DFC0)
-    val beamDark = if (isDark) Color(0xFF4E4031) else Color(0xFFD0B483)
-    val beadColor = if (isDark) Color(0xFF5876A1) else Color(0xFF254A7A)
-    val dotColor = if (isDark) Color(0xFFADC2DF) else Color(0xFF315A8D)
     val surroundColor = MaterialTheme.colorScheme.surfaceVariant
 
     BoxWithConstraints(
@@ -145,37 +227,41 @@ fun SorobanCanvas(
     ) {
         val canvasWidth = constraints.maxWidth.toFloat()
         val canvasHeight = constraints.maxHeight.toFloat()
-        val frameThickness = (minOf(canvasWidth, canvasHeight) * 0.070f).coerceIn(26f, 60f)
-        val fieldInset = frameThickness * 0.92f
-        val innerTop = fieldInset
-        val innerBottom = canvasHeight - fieldInset
-        val innerHeight = innerBottom - innerTop
-        // Each rod owns one slot of the field and sits at its centre, so even the outermost bead
-        // stays clear of the frame however wide the board gets.
-        val rodSpacing = (canvasWidth - fieldInset * 2) / rodsCount.coerceAtLeast(1)
-        val innerLeft = fieldInset + rodSpacing / 2f
-        val beamHeight = (canvasHeight * BEAM_HEIGHT_FRACTION).coerceAtLeast(24f)
-        // The upper deck carries one bead and its travel, the lower four plus travel: two slots
-        // against five. Splitting the field that way keeps the decks in proportion.
-        val beamTopY = innerTop + innerHeight * HEAVEN_DECK_FRACTION
-        val beamBottomY = beamTopY + beamHeight
-        val beadWidth = (rodSpacing * 0.86f)
-            .coerceAtMost(canvasHeight * 0.14f)
-            .coerceAtLeast(20f)
-        val beadHeight = minOf(beadWidth * 0.60f, innerHeight * 0.085f)
-            .coerceAtLeast(13f)
-        val beadGap = (innerHeight * 0.008f).coerceIn(3f, 8f)
 
-        fun rodX(index: Int): Float = innerLeft + rodSpacing * index
+        // One design unit in canvas pixels. Everything below is written in design units.
+        val unit = canvasHeight / BOARD_HEIGHT
 
-        val heavenInactiveY = innerTop + beadHeight / 2 + 12f
-        val heavenActiveY = beamTopY - beadHeight / 2 - 9f
+        val fieldLeft = FIELD_INSET_X * unit
+        val fieldRight = canvasWidth - FIELD_INSET_X * unit
+        val fieldTop = FIELD_INSET_Y * unit
+        val fieldBottom = canvasHeight - FIELD_INSET_Y * unit
+        val fieldWidth = fieldRight - fieldLeft
+
+        val beamTopY = BEAM_TOP * unit
+        val beamBottomY = beamTopY + BEAM_HEIGHT * unit
+
+        val beadHeight = BEAD_HEIGHT * unit
+        val beadGap = BEAD_GAP * unit
+
+        // The outer bead columns sit fully inside the field with margin, and the remaining width
+        // is shared evenly. This is the only thing that depends on the rod count.
+        val spans = (rodsCount - 1).coerceAtLeast(1)
+        val rodSpacing = (fieldWidth - 2f * BEAD_EDGE * unit) / spans
+        val firstRodX = fieldLeft + BEAD_EDGE * unit
+        val beadWidth = minOf(BEAD_WIDTH * unit, rodSpacing - 8f * unit).coerceAtLeast(1f)
+
+        fun rodX(index: Int): Float = firstRodX + rodSpacing * index
+
+        val heavenInactiveY = fieldTop + (BEAD_TO_FIELD + BEAD_HEIGHT / 2f) * unit
+        val heavenActiveY = beamTopY - (BEAD_TO_BEAM + BEAD_HEIGHT / 2f) * unit
 
         fun earthActiveY(beadIndex: Int): Float =
-            beamBottomY + beadHeight / 2 + 9f + beadIndex * (beadHeight + beadGap)
+            beamBottomY + (BEAD_TO_BEAM + BEAD_HEIGHT / 2f) * unit +
+                beadIndex * (beadHeight + beadGap)
 
         fun earthInactiveY(beadIndex: Int): Float =
-            innerBottom - beadHeight / 2 - 10f - (3 - beadIndex) * (beadHeight + beadGap)
+            fieldBottom - (BEAD_TO_FIELD + BEAD_HEIGHT / 2f) * unit -
+                (3 - beadIndex) * (beadHeight + beadGap)
 
         fun commitRodValue(rodIndex: Int, nextValue: Int): Boolean {
             val currentValue = latestRods.getOrElse(rodIndex) { 0 }
@@ -192,7 +278,7 @@ fun SorobanCanvas(
             return true
         }
 
-        fun rodAt(touchX: Float): Int = ((touchX - innerLeft) / rodSpacing)
+        fun rodAt(touchX: Float): Int = ((touchX - firstRodX) / rodSpacing)
             .roundToInt()
             .coerceIn(0, rodsCount - 1)
 
@@ -293,143 +379,167 @@ fun SorobanCanvas(
                     }
                 }
         ) {
-            val cornerRadius = CornerRadius(frameThickness * 0.48f)
-
-            // Pale hinoki frame, recessed paper field, and restrained wood grain.
+            // ── Ebony frame ────────────────────────────────────────────────────────────────
+            val (boardStart, boardEnd) = angledGradient(150f, size)
             drawRoundRect(
                 brush = Brush.linearGradient(
-                    colors = listOf(frameHighlight, frameLight, frameMid, frameLight, frameDark),
-                    start = Offset.Zero,
-                    end = Offset(size.width, size.height)
+                    0f to EbonyLight, 0.52f to EbonyMid, 1f to EbonyDark,
+                    start = boardStart,
+                    end = boardEnd
                 ),
-                cornerRadius = cornerRadius
+                cornerRadius = CornerRadius(BOARD_RADIUS * unit)
             )
+            // Edge definition, then the brass sheen that catches along the top lip.
             drawRoundRect(
-                color = Color.Black.copy(alpha = if (isDark) 0.36f else 0.18f),
-                topLeft = Offset(frameThickness * 0.70f, frameThickness * 0.76f),
-                size = Size(
-                    size.width - frameThickness * 1.40f,
-                    size.height - frameThickness * 1.52f
-                ),
-                cornerRadius = CornerRadius(frameThickness * 0.23f)
+                color = Color.Black.copy(alpha = 0.5f),
+                cornerRadius = CornerRadius(BOARD_RADIUS * unit),
+                style = Stroke(width = unit)
+            )
+            drawLine(
+                color = BrassSheen.copy(alpha = 0.28f),
+                start = Offset(BOARD_RADIUS * unit, unit * 0.5f),
+                end = Offset(size.width - BOARD_RADIUS * unit, unit * 0.5f),
+                strokeWidth = unit
             )
 
+            // ── Brass inlay hairline ───────────────────────────────────────────────────────
             drawRoundRect(
-                brush = Brush.verticalGradient(listOf(fieldTop, fieldBottom)),
-                topLeft = Offset(fieldInset, fieldInset),
+                color = Brass.copy(alpha = 0.34f),
+                topLeft = Offset(INLAY_INSET_X * unit, INLAY_INSET_Y * unit),
                 size = Size(
-                    size.width - fieldInset * 2,
-                    size.height - fieldInset * 2
+                    size.width - INLAY_INSET_X * 2f * unit,
+                    size.height - INLAY_INSET_Y * 2f * unit
                 ),
-                cornerRadius = CornerRadius(frameThickness * 0.16f)
+                cornerRadius = CornerRadius(INLAY_RADIUS * unit),
+                style = Stroke(width = unit)
             )
 
-            val grainColor = frameDark.copy(alpha = if (isDark) 0.20f else 0.12f)
-            repeat(3) { index ->
-                val fraction = 0.25f + index * 0.23f
-                drawLine(
-                    color = grainColor,
-                    start = Offset(frameThickness * 0.78f, frameThickness * fraction),
-                    end = Offset(size.width - frameThickness * 0.78f, frameThickness * (fraction + 0.04f)),
-                    strokeWidth = 1f
-                )
-                drawLine(
-                    color = grainColor,
-                    start = Offset(frameThickness * 0.78f, size.height - frameThickness * fraction),
-                    end = Offset(size.width - frameThickness * 0.78f, size.height - frameThickness * (fraction + 0.04f)),
-                    strokeWidth = 1f
-                )
-            }
+            // ── Bone reckoning field ───────────────────────────────────────────────────────
+            val fieldSize = Size(fieldWidth, fieldBottom - fieldTop)
+            drawRoundRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BoneLight, BoneDark),
+                    startY = fieldTop,
+                    endY = fieldBottom
+                ),
+                topLeft = Offset(fieldLeft, fieldTop),
+                size = fieldSize,
+                cornerRadius = CornerRadius(FIELD_RADIUS * unit)
+            )
+            // Recessed under the frame: the shadow gathers along the top edge and fades out.
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(FieldRecessColor.copy(alpha = 0.34f), Color.Transparent),
+                    startY = fieldTop,
+                    endY = fieldTop + FIELD_RECESS * unit
+                ),
+                topLeft = Offset(fieldLeft, fieldTop),
+                size = Size(fieldWidth, FIELD_RECESS * unit)
+            )
+            drawLine(
+                color = Color.White.copy(alpha = 0.6f),
+                start = Offset(fieldLeft, fieldBottom - unit * 0.5f),
+                end = Offset(fieldRight, fieldBottom - unit * 0.5f),
+                strokeWidth = unit
+            )
 
+            // ── Brass rods, behind the beam and the beads ──────────────────────────────────
+            val rodWidth = ROD_WIDTH * unit
             repeat(rodsCount) { index ->
                 val x = rodX(index)
                 drawLine(
-                    color = Color.Black.copy(alpha = if (isDark) 0.40f else 0.22f),
-                    start = Offset(x + 2.2f, innerTop),
-                    end = Offset(x + 2.2f, innerBottom),
-                    strokeWidth = 7f
+                    color = Color(0xFF785C2C).copy(alpha = 0.35f),
+                    start = Offset(x, fieldTop),
+                    end = Offset(x, fieldBottom),
+                    strokeWidth = rodWidth + 3f * unit
                 )
-                drawLine(
-                    color = rodDark,
-                    start = Offset(x, innerTop),
-                    end = Offset(x, innerBottom),
-                    strokeWidth = 5.8f
-                )
-                drawLine(
-                    color = rodColor,
-                    start = Offset(x - 0.7f, innerTop),
-                    end = Offset(x - 0.7f, innerBottom),
-                    strokeWidth = 4.1f
-                )
-                drawLine(
-                    color = rodLight.copy(alpha = if (isDark) 0.52f else 0.86f),
-                    start = Offset(x - 1.4f, innerTop),
-                    end = Offset(x - 1.4f, innerBottom),
-                    strokeWidth = 1.2f
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        colorStops = RodStops,
+                        startX = x - rodWidth / 2f,
+                        endX = x + rodWidth / 2f
+                    ),
+                    topLeft = Offset(x - rodWidth / 2f, fieldTop),
+                    size = Size(rodWidth, fieldBottom - fieldTop)
                 )
             }
 
-            drawRoundRect(
-                color = Color.Black.copy(alpha = if (isDark) 0.34f else 0.18f),
-                topLeft = Offset(fieldInset, beamTopY + 3.5f),
-                size = Size(size.width - fieldInset * 2, beamHeight),
-                cornerRadius = CornerRadius(beamHeight * 0.16f)
+            // ── Reckoning beam ─────────────────────────────────────────────────────────────
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BeamShadowColor.copy(alpha = 0.4f), Color.Transparent),
+                    startY = beamBottomY,
+                    endY = beamBottomY + BEAM_SHADOW * unit
+                ),
+                topLeft = Offset(fieldLeft, beamBottomY),
+                size = Size(fieldWidth, BEAM_SHADOW * unit)
             )
-            drawRoundRect(
-                brush = Brush.verticalGradient(listOf(beamLight, beamDark)),
-                topLeft = Offset(fieldInset, beamTopY),
-                size = Size(size.width - fieldInset * 2, beamHeight),
-                cornerRadius = CornerRadius(beamHeight * 0.16f)
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BeamLight, BeamDark),
+                    startY = beamTopY,
+                    endY = beamBottomY
+                ),
+                topLeft = Offset(fieldLeft, beamTopY),
+                size = Size(fieldWidth, BEAM_HEIGHT * unit)
             )
             drawLine(
-                color = frameHighlight.copy(alpha = if (isDark) 0.28f else 0.68f),
-                start = Offset(fieldInset + 4f, beamTopY + 1.2f),
-                end = Offset(size.width - fieldInset - 4f, beamTopY + 1.2f),
-                strokeWidth = 1.2f
+                color = Brass.copy(alpha = 0.42f),
+                start = Offset(fieldLeft, beamTopY + unit * 0.5f),
+                end = Offset(fieldRight, beamTopY + unit * 0.5f),
+                strokeWidth = unit
             )
 
+            // ── Brass unit markers, on the app's every-fourth-rod grouping ─────────────────
+            val markerReach = MARKER_SIZE * unit * 0.7071f
             repeat(rodsCount) { index ->
                 if ((rodsCount - 1 - index) % 4 == 3) {
-                    drawCircle(
-                        color = dotColor,
-                        radius = (beamHeight * 0.20f).coerceAtLeast(2.5f),
-                        center = Offset(
-                            x = rodX(index),
-                            y = beamTopY + beamHeight / 2
+                    val centre = Offset(rodX(index), beamTopY + BEAM_HEIGHT * unit / 2f)
+                    val diamond = Path().apply {
+                        moveTo(centre.x, centre.y - markerReach)
+                        lineTo(centre.x + markerReach, centre.y)
+                        lineTo(centre.x, centre.y + markerReach)
+                        lineTo(centre.x - markerReach, centre.y)
+                        close()
+                    }
+                    val (markerStart, markerEnd) = angledGradient(
+                        degrees = 135f,
+                        size = Size(markerReach * 2f, markerReach * 2f),
+                        origin = Offset(centre.x - markerReach, centre.y - markerReach)
+                    )
+                    drawPath(
+                        path = diamond,
+                        brush = Brush.linearGradient(
+                            colors = listOf(BrassMarkerLight, BrassMarkerDark),
+                            start = markerStart,
+                            end = markerEnd
                         )
                     )
                 }
             }
 
+            // ── Black-lacquer beads ────────────────────────────────────────────────────────
             repeat(rodsCount) { index ->
                 val x = rodX(index)
                 val heavenFactor = heavenAnimatables[index].value
-                val heavenY = heavenInactiveY + (heavenActiveY - heavenInactiveY) * heavenFactor
-
-                drawSorobanBead(
+                drawLacquerBead(
                     centerX = x,
-                    centerY = heavenY,
+                    centerY = heavenInactiveY + (heavenActiveY - heavenInactiveY) * heavenFactor,
                     beadWidth = beadWidth,
                     beadHeight = beadHeight,
-                    color = beadColor,
-                    rodColor = rodColor,
-                    dark = isDark
+                    unit = unit
                 )
 
                 repeat(4) { beadIndex ->
                     val factor = earthAnimatables[index][beadIndex].value
                     val activeY = earthActiveY(beadIndex)
                     val inactiveY = earthInactiveY(beadIndex)
-                    val beadY = inactiveY + (activeY - inactiveY) * factor
-
-                    drawSorobanBead(
+                    drawLacquerBead(
                         centerX = x,
-                        centerY = beadY,
+                        centerY = inactiveY + (activeY - inactiveY) * factor,
                         beadWidth = beadWidth,
                         beadHeight = beadHeight,
-                        color = beadColor,
-                        rodColor = rodColor,
-                        dark = isDark
+                        unit = unit
                     )
                 }
             }
@@ -472,6 +582,54 @@ fun SorobanCanvas(
             }
         }
     }
+}
+
+/**
+ * A blurred ellipse: [color] reaching [alpha] in the middle and fading to nothing by the edge.
+ *
+ * Stacked flat ovals rather than a radial gradient. A gradient would need its own shader per bead
+ * per frame, since each one is centred somewhere different, and thirty-five beads' worth of that
+ * is enough to stall a software renderer outright. Each ring adds the same small alpha, so the
+ * centre accumulates to [alpha] and the rim keeps a single faint pass.
+ */
+private fun DrawScope.softEllipse(
+    centre: Offset,
+    width: Float,
+    height: Float,
+    color: Color,
+    alpha: Float
+) {
+    val step = 1f - (1f - alpha).pow(1f / SOFT_ELLIPSE_RINGS)
+    val ringColor = color.copy(alpha = step)
+    repeat(SOFT_ELLIPSE_RINGS) { ring ->
+        // The outermost ring runs wider than the nominal size, the way the reference's blur does.
+        val spread = 1.5f - ring * (1.2f / SOFT_ELLIPSE_RINGS)
+        val ringWidth = width * spread
+        val ringHeight = height * spread
+        drawOval(
+            color = ringColor,
+            topLeft = Offset(centre.x - ringWidth / 2f, centre.y - ringHeight / 2f),
+            size = Size(ringWidth, ringHeight)
+        )
+    }
+}
+
+/**
+ * Start and end of a CSS `linear-gradient(<degrees>, ...)` axis across a box of [size] placed at
+ * [origin]: zero degrees points up, and the angle runs clockwise.
+ */
+private fun angledGradient(
+    degrees: Float,
+    size: Size,
+    origin: Offset = Offset.Zero
+): Pair<Offset, Offset> {
+    val radians = degrees * PI.toFloat() / 180f
+    val dx = sin(radians)
+    val dy = -cos(radians)
+    val length = abs(size.width * dx) + abs(size.height * dy)
+    val centre = Offset(origin.x + size.width / 2f, origin.y + size.height / 2f)
+    val half = Offset(dx * length / 2f, dy * length / 2f)
+    return centre - half to centre + half
 }
 
 /** Center of earth bead [beadIndex] for a rod holding [activeCount] raised beads. */
@@ -545,187 +703,178 @@ fun SorobanGuidePreview(
     accessibilityDescription: String,
     modifier: Modifier = Modifier
 ) {
-    val isDark = isSystemInDarkTheme()
-    val fieldTop = if (isDark) Color(0xFF211F1B) else Color(0xFFF0ECE3)
-    val fieldBottom = if (isDark) Color(0xFF171612) else Color(0xFFE5DFD3)
-    val frameColor = if (isDark) Color(0xFF78654C) else Color(0xFFE5CE9F)
-    val rodColor = if (isDark) Color(0xFFAAA69D) else Color(0xFF92918B)
-    val beamColor = if (isDark) Color(0xFF755F47) else Color(0xFFDEC69B)
-    val beadColor = if (isDark) Color(0xFF5876A1) else Color(0xFF254A7A)
-    val dotColor = if (isDark) Color(0xFFADC2DF) else Color(0xFF315A8D)
-
     Canvas(
         modifier = modifier.semantics {
             contentDescription = accessibilityDescription
         }
     ) {
-        val inset = 3f
-        val beamHeight = (size.height * 0.1650f).coerceAtLeast(20f)
-        val beamTop = size.height * HEAVEN_DECK_FRACTION
+        // A single rod, upright, in the same materials as the board itself.
+        val unit = size.width / 116f
+        val frame = 5f * unit
+        val fieldTop = frame
+        val fieldBottom = size.height - frame
         val centerX = size.width / 2f
-        val beadWidth = size.width * 0.54f
-        val beadHeight = (size.height * 0.105f).coerceAtMost(beadWidth * 0.56f)
+        val beamHeight = 9f * unit
+        val beamTop = fieldTop + (fieldBottom - fieldTop) * 0.28f
+        val beadWidth = size.width * 0.58f
+        val beadHeight = beadWidth * BEAD_HEIGHT / BEAD_WIDTH
+        val beadGap = beadHeight * BEAD_GAP / BEAD_HEIGHT
 
+        val (boardStart, boardEnd) = angledGradient(150f, size)
         drawRoundRect(
-            brush = Brush.verticalGradient(listOf(fieldTop, fieldBottom)),
-            topLeft = Offset(inset, inset),
-            size = Size(size.width - inset * 2, size.height - inset * 2),
-            cornerRadius = CornerRadius(16f)
+            brush = Brush.linearGradient(
+                0f to EbonyLight, 0.52f to EbonyMid, 1f to EbonyDark,
+                start = boardStart,
+                end = boardEnd
+            ),
+            cornerRadius = CornerRadius(4f * unit)
         )
         drawRoundRect(
-            color = frameColor,
-            cornerRadius = CornerRadius(16f),
-            style = Stroke(width = 6f)
-        )
-        drawLine(
-            color = rodColor,
-            start = Offset(centerX, inset + 4f),
-            end = Offset(centerX, size.height - inset - 4f),
-            strokeWidth = 3f
+            brush = Brush.verticalGradient(
+                colors = listOf(BoneLight, BoneDark),
+                startY = fieldTop,
+                endY = fieldBottom
+            ),
+            topLeft = Offset(frame, fieldTop),
+            size = Size(size.width - frame * 2f, fieldBottom - fieldTop),
+            cornerRadius = CornerRadius(unit)
         )
         drawRect(
-            color = beamColor,
-            topLeft = Offset(inset + 3f, beamTop),
-            size = Size(size.width - inset * 2 - 6f, beamHeight)
+            brush = Brush.horizontalGradient(
+                colorStops = RodStops,
+                startX = centerX - unit,
+                endX = centerX + unit
+            ),
+            topLeft = Offset(centerX - unit, fieldTop),
+            size = Size(2f * unit, fieldBottom - fieldTop)
         )
-        drawCircle(
-            color = dotColor,
-            radius = (beamHeight * 0.22f).coerceAtLeast(2.5f),
-            center = Offset(centerX, beamTop + beamHeight / 2f)
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(BeamLight, BeamDark),
+                startY = beamTop,
+                endY = beamTop + beamHeight
+            ),
+            topLeft = Offset(frame, beamTop),
+            size = Size(size.width - frame * 2f, beamHeight)
+        )
+        val markerReach = beamHeight * 0.45f
+        drawPath(
+            path = Path().apply {
+                val cy = beamTop + beamHeight / 2f
+                moveTo(centerX, cy - markerReach)
+                lineTo(centerX + markerReach, cy)
+                lineTo(centerX, cy + markerReach)
+                lineTo(centerX - markerReach, cy)
+                close()
+            },
+            brush = Brush.linearGradient(listOf(BrassMarkerLight, BrassMarkerDark))
         )
 
-        drawSorobanBead(
+        drawLacquerBead(
             centerX = centerX,
-            centerY = beamTop - beadHeight / 2f - 6f,
+            centerY = beamTop - beadHeight / 2f - 3f * unit,
             beadWidth = beadWidth,
             beadHeight = beadHeight,
-            color = beadColor,
-            rodColor = rodColor,
-            dark = isDark
+            unit = unit
         )
-
         repeat(4) { beadIndex ->
             val active = beadIndex < 2
             val centerY = if (active) {
-                beamTop + beamHeight + beadHeight / 2f + 6f +
-                    beadIndex * (beadHeight + 4f)
+                beamTop + beamHeight + beadHeight / 2f + 3f * unit +
+                    beadIndex * (beadHeight + beadGap)
             } else {
-                size.height - beadHeight / 2f - 10f -
-                    (3 - beadIndex) * (beadHeight + 4f)
+                fieldBottom - beadHeight / 2f - 3f * unit -
+                    (3 - beadIndex) * (beadHeight + beadGap)
             }
-            drawSorobanBead(
+            drawLacquerBead(
                 centerX = centerX,
                 centerY = centerY,
                 beadWidth = beadWidth,
                 beadHeight = beadHeight,
-                color = beadColor,
-                rodColor = rodColor,
-                dark = isDark
+                unit = unit
             )
         }
     }
 }
 
-private fun DrawScope.drawSorobanBead(
+/**
+ * One black-lacquer bead: a sharp bi-cone with a brass-lit equator ridge, a specular highlight on
+ * the upper face, and a little bounce light off the field below. The ridge is what makes it read
+ * as turned lacquer rather than a flat shape, so all three highlights are clipped to the
+ * silhouette and none of them may spill past it.
+ */
+private fun DrawScope.drawLacquerBead(
     centerX: Float,
     centerY: Float,
     beadWidth: Float,
     beadHeight: Float,
-    color: Color,
-    rodColor: Color,
-    dark: Boolean
+    unit: Float
 ) {
-    fun beadPath(yOffset: Float = 0f) = Path().apply {
-        val left = centerX - beadWidth / 2
-        val right = centerX + beadWidth / 2
-        val top = centerY - beadHeight / 2 + yOffset
-        val bottom = centerY + beadHeight / 2 + yOffset
-        val middle = centerY + yOffset
-        moveTo(left + beadWidth * 0.29f, top)
-        quadraticBezierTo(left + beadWidth * 0.22f, top, left + beadWidth * 0.16f, top + beadHeight * 0.17f)
-        lineTo(left + beadWidth * 0.035f, middle - beadHeight * 0.10f)
-        quadraticBezierTo(left, middle, left + beadWidth * 0.035f, middle + beadHeight * 0.10f)
-        lineTo(left + beadWidth * 0.16f, bottom - beadHeight * 0.17f)
-        quadraticBezierTo(left + beadWidth * 0.22f, bottom, left + beadWidth * 0.29f, bottom)
-        lineTo(right - beadWidth * 0.29f, bottom)
-        quadraticBezierTo(right - beadWidth * 0.22f, bottom, right - beadWidth * 0.16f, bottom - beadHeight * 0.17f)
-        lineTo(right - beadWidth * 0.035f, middle + beadHeight * 0.10f)
-        quadraticBezierTo(right, middle, right - beadWidth * 0.035f, middle - beadHeight * 0.10f)
-        lineTo(right - beadWidth * 0.16f, top + beadHeight * 0.17f)
-        quadraticBezierTo(right - beadWidth * 0.22f, top, right - beadWidth * 0.29f, top)
+    val left = centerX - beadWidth / 2f
+    val top = centerY - beadHeight / 2f
+
+    fun outline(yOffset: Float = 0f) = Path().apply {
+        BeadOutline.forEachIndexed { index, (fx, fy) ->
+            val x = left + beadWidth * fx
+            val y = top + beadHeight * fy + yOffset
+            if (index == 0) moveTo(x, y) else lineTo(x, y)
+        }
         close()
     }
 
-    val left = centerX - beadWidth / 2
-    val right = centerX + beadWidth / 2
-    val top = centerY - beadHeight / 2
-    val bottom = centerY + beadHeight / 2
-
-    drawPath(
-        path = beadPath(yOffset = 3.4f),
-        color = Color.Black.copy(alpha = if (dark) 0.48f else 0.30f)
-    )
-    drawPath(
-        path = beadPath(),
-        brush = Brush.verticalGradient(
-            colors = listOf(
-                color.copy(
-                    red = (color.red + 0.12f).coerceAtMost(1f),
-                    green = (color.green + 0.12f).coerceAtMost(1f),
-                    blue = (color.blue + 0.12f).coerceAtMost(1f)
-                ),
-                color,
-                color.copy(
-                    red = color.red * 0.66f,
-                    green = color.green * 0.66f,
-                    blue = color.blue * 0.66f
-                )
-            ),
-            startY = top,
-            endY = bottom
+    // Contact shadow. Stacked offsets stand in for the reference's 4px blur: the same soft, tight
+    // pool under the bi-cone, without a mask filter the hardware canvas may refuse to honour.
+    listOf(1.3f to 0.17f, 2.6f to 0.13f, 4f to 0.09f).forEach { (offset, alpha) ->
+        drawPath(
+            path = outline(yOffset = offset * unit),
+            color = BeadShadowColor.copy(alpha = alpha)
         )
-    )
-    drawPath(
-        path = beadPath(),
-        color = Color.Black.copy(alpha = if (dark) 0.34f else 0.25f),
-        style = Stroke(width = 1.1f)
-    )
-
-    clipPath(beadPath()) {
-        drawLine(
-            color = Color.White.copy(alpha = if (dark) 0.14f else 0.20f),
-            start = Offset(left + beadWidth * 0.18f, top + beadHeight * 0.25f),
-            end = Offset(right - beadWidth * 0.18f, top + beadHeight * 0.23f),
-            strokeWidth = 1.2f
-        )
-        repeat(2) { index ->
-            val y = centerY + beadHeight * (0.08f + index * 0.13f)
-            drawLine(
-                color = Color.Black.copy(alpha = 0.11f),
-                start = Offset(left + beadWidth * (0.20f + index * 0.03f), y),
-                end = Offset(right - beadWidth * (0.18f + index * 0.04f), y - 0.7f),
-                strokeWidth = 0.8f
-            )
-        }
     }
 
-    val holeWidth = (beadWidth * 0.085f).coerceAtLeast(3f)
-    val holeHeight = (beadHeight * 0.16f).coerceAtLeast(2f)
-    val holeColor = Color.Black.copy(alpha = if (dark) 0.46f else 0.38f)
-    drawOval(
-        color = holeColor,
-        topLeft = Offset(centerX - holeWidth / 2, top - holeHeight * 0.18f),
-        size = Size(holeWidth, holeHeight)
+    val body = outline()
+    drawPath(
+        path = body,
+        brush = Brush.verticalGradient(
+            0f to LacquerLight, 0.46f to LacquerMid, 1f to LacquerDark,
+            startY = top,
+            endY = top + beadHeight
+        )
     )
-    drawOval(
-        color = holeColor,
-        topLeft = Offset(centerX - holeWidth / 2, bottom - holeHeight * 0.82f),
-        size = Size(holeWidth, holeHeight)
-    )
-    drawLine(
-        color = rodColor.copy(alpha = 0.72f),
-        start = Offset(centerX, top),
-        end = Offset(centerX, top + holeHeight * 0.46f),
-        strokeWidth = (holeWidth * 0.24f).coerceAtLeast(1f)
-    )
+
+    clipPath(body) {
+        // Equator ridge: a warm brass-lit band fading to a hard shadow under it.
+        drawRect(
+            brush = Brush.verticalGradient(
+                0f to BeadRidge.copy(alpha = 0.26f),
+                0.55f to BeadRidge.copy(alpha = 0.06f),
+                1f to Color.Black.copy(alpha = 0.45f),
+                startY = top + beadHeight * 0.4333f,
+                endY = top + beadHeight * 0.5667f
+            ),
+            topLeft = Offset(left, top + beadHeight * 0.4333f),
+            size = Size(beadWidth, beadHeight * 0.1334f)
+        )
+        // Specular on the upper face. The reference blurs a small ellipse, and a blur that wide
+        // relative to the shape is most of the effect: a hard-edged oval of the stated size reads
+        // as a blob stuck on the bead. A radial falloff over a slightly larger ellipse gives the
+        // same soft sheen, and needs no mask filter the hardware canvas might decline.
+        softEllipse(
+            centre = Offset(
+                x = left + beadWidth * (0.275f + 0.35f / 2f),
+                y = top + beadHeight * (0.1333f + 0.20f / 2f)
+            ),
+            width = beadWidth * 0.35f,
+            height = beadHeight * 0.20f,
+            color = BeadSpecular,
+            alpha = 0.34f
+        )
+        // Bounce light off the field.
+        softEllipse(
+            centre = Offset(centerX, top + beadHeight * 0.85f),
+            width = beadWidth * 0.65f,
+            height = beadHeight * 0.10f,
+            color = BeadBounce,
+            alpha = 0.12f
+        )
+    }
 }
