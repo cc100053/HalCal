@@ -19,8 +19,7 @@ MainActivity
         │                └── tax / units / practice / history sheets
         ├── sideways ─> TurnedFrame ──> SorobanScreen
         │                ├── SorobanCanvas
-        │                ├── ShakeResetListener
-        │                └── ShareUtility
+        │                └── ShakeResetListener
         └── override ───> SettingsScreen
 ```
 
@@ -52,7 +51,7 @@ MainActivity
 
 ### UI and platform components
 
-Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns only transient bead animation state; authoritative rod values remain in the ViewModel. `ShakeResetListener` owns sensor registration through `DisposableEffect`. `ShareUtility` owns bitmap/file/intent creation on `Dispatchers.IO`.
+Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns only transient bead animation state; authoritative rod values remain in the ViewModel. `ShakeResetListener` owns sensor registration through `DisposableEffect`.
 
 ## Important invariants
 
@@ -67,7 +66,6 @@ Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns on
 - Practice timer and delayed-next-problem jobs are cancelled on stop and `ViewModel.onCleared()`.
 - Practice UI moves through explicit ready, active, and finished phases; an active sheet disposal completes the session instead of leaving a hidden timer running.
 - Soroban undo restores a size-matched defensive copy of the previous rod state, then recomputes the numeric value.
-- Shared images live only under `cacheDir/shared_images`, the exact path exposed by `file_paths.xml`.
 
 ## Extension guidance
 

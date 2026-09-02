@@ -1,6 +1,5 @@
 package com.sorobanzen.app.ui.screens
 
-import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -63,7 +62,6 @@ import androidx.compose.ui.unit.sp
 import com.sorobanzen.app.R
 import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.ui.components.ShakeResetListener
-import com.sorobanzen.app.ui.components.ShareUtility
 import com.sorobanzen.app.ui.components.SorobanCanvas
 import com.sorobanzen.app.ui.components.SorobanGuidePreview
 import com.sorobanzen.app.ui.components.sorobanBoardAspect
@@ -101,7 +99,6 @@ fun SorobanScreen(
         String.format(Locale.ROOT, "%,d", sorobanValue)
     }
     var showGuide by remember { mutableStateOf(false) }
-    var isSharing by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     fun clearWithUndo() {
@@ -258,49 +255,6 @@ fun SorobanScreen(
                         label = stringResource(id = R.string.clear_beads),
                         enabled = sorobanValue != 0L,
                         onClick = ::clearWithUndo
-                    )
-                    SorobanRailAction(
-                        label = stringResource(id = if (isSharing) R.string.sharing else R.string.share),
-                        enabled = !isSharing,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                        onClick = {
-                            performHapticFeedback()
-                            isSharing = true
-                            coroutineScope.launch {
-                                try {
-                                    runCatching {
-                                        ShareUtility.createSorobanShareIntent(
-                                            context = context,
-                                            value = sorobanValue,
-                                            kanjiReading = kanjiReading,
-                                            rodsCount = rodsCount,
-                                            rodValues = rodValues
-                                        )
-                                    }.onSuccess { shareIntent ->
-                                        context.startActivity(
-                                            Intent.createChooser(
-                                                shareIntent,
-                                                context.getString(R.string.share_title)
-                                            )
-                                        )
-                                    }.onFailure {
-                                        // Not a Toast: the system draws those in the window's
-                                        // own orientation, which is not the reader's here. Its
-                                        // own coroutine, so the share button frees up at once
-                                        // instead of waiting out the message.
-                                        coroutineScope.launch {
-                                            snackbarHostState.showSnackbar(
-                                                message = context.getString(R.string.share_failed),
-                                                withDismissAction = true,
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        }
-                                    }
-                                } finally {
-                                    isSharing = false
-                                }
-                            }
-                        }
                     )
                     SorobanRailAction(
                         label = stringResource(id = R.string.guide),

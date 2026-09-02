@@ -5,7 +5,7 @@
 How the phone is being held is the top-level mode selector:
 
 - **Upright:** calculator home. Users can open history, settings, tax, traditional units, or practice as overlays/screens.
-- **Sideways:** interactive soroban, full screen with the system bars hidden. Users manipulate rods, inspect numeric/Kanji readings, toggle the sign, clear, shake to reset, share an image, or open usage information.
+- **Sideways:** interactive soroban, full screen with the system bars hidden. Users manipulate rods, inspect numeric/Kanji readings, toggle the sign, clear, shake to reset, or open usage information.
 - **Settings active:** settings temporarily replaces the mode-selected screen until the user goes back, and is drawn in whichever way the phone is being held.
 
 The window never rotates. It is pinned to portrait (`android:screenOrientation="portrait"`) and the content turns instead: `MainActivity.TurnedFrame` measures the child with the window's width and height swapped and draws it rotated a quarter turn, so the soroban gets true landscape constraints out of a portrait window. Both modes therefore live in one window that never changes shape, and moving between them is a plain cross-fade the app owns end to end.
@@ -32,9 +32,7 @@ One consequence to design around: anything that opens its own window — `Dialog
 - Each rod is a decimal digit: the heaven bead contributes five and up to four earth beads contribute one each.
 - Rods are ordered most-significant to least-significant from left to right.
 - Japanese readings use four-digit Kanji units (`万`, `億`, `兆`, `京`). Romaji is intentionally not generated or shown.
-- Sharing renders a fixed 1200×750 warm-paper PNG in the app cache, exposes it through `FileProvider`, and launches the Android chooser.
 - Clearing from the button or shake gesture offers a short undo action that restores the complete prior rod state.
-- Share generation is single-flight and fits long numeric/Kanji readings within the generated card.
 
 ### Tax
 
@@ -72,4 +70,4 @@ One consequence to design around: anything that opens its own window — `Dialog
 
 ## Localization state
 
-The product interface is Japanese-only. Japanese strings live in the default `values/strings.xml`, so the app remains Japanese regardless of the device locale; there is no English locale overlay. User-visible copy, accessibility descriptions, history modes, dates, generated share cards, errors, and number readings must remain Japanese. Mathematical and international measurement symbols such as `m²`, `kg`, `+`, and `÷` are allowed.
+The product interface is Japanese-only. Japanese strings live in the default `values/strings.xml`, so the app remains Japanese regardless of the device locale; there is no English locale overlay. User-visible copy, accessibility descriptions, history modes, dates, errors, and number readings must remain Japanese. Mathematical and international measurement symbols such as `m²`, `kg`, `+`, and `÷` are allowed.

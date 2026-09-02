@@ -143,8 +143,4 @@
     <string name="history_mode_tax">消費税計算</string>
 
     <!-- 共有 -->
-    <string name="share">共有</string>
-    <string name="sharing">作成中</string>
-    <string name="share_title">計算の共有</string>
-    <string name="share_failed">共有画像を作成できませんでした</string>
 </resources>

@@ -49,7 +49,6 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. Andro
 - Accelerometer access through `SensorManager`; no dangerous runtime permission is required.
 - Haptics through Compose `LocalHapticFeedback`.
 - Bead clicks through Android view sound effects.
-- Image sharing through `FileProvider` authority `${applicationId}.fileprovider` and cached PNG files.
 - Room SQLite persistence and Android SharedPreferences.
 - Android backup is enabled, but the included backup/data-extraction XML files still contain default placeholder rules.
 

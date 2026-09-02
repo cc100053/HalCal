@@ -18,8 +18,8 @@ The main source layers are:
 - `app/src/main/java/com/sorobanzen/app/domain/`: pure calculation and session logic. Keep this Android-free where practical.
 - `app/src/main/java/com/sorobanzen/app/data/`: Room history storage and SharedPreferences-backed settings.
 - `app/src/main/java/com/sorobanzen/app/viewmodel/`: state, orchestration, coroutines, and domain/data coordination.
-- `app/src/main/java/com/sorobanzen/app/ui/`: Compose screens, canvas components, sharing, sensors, and theme.
-- `app/src/main/res/`: English and Japanese strings, themes, icons, backup rules, and FileProvider configuration.
+- `app/src/main/java/com/sorobanzen/app/ui/`: Compose screens, canvas components, sensors, and theme.
+- `app/src/main/res/`: Japanese strings, themes, icons, and backup rules.
 - `app/src/test/`: local JVM tests for domain behavior.
 
 See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
@@ -34,22 +34,21 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 - Anything that opens its own window (`Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast`) comes up in the window's portrait orientation, not the reader's, so it is unusable while the phone is sideways. Inside the turned frame use an inline overlay instead — see `SorobanGuideOverlay` — and the existing snackbar host in place of a `Toast`.
 - `TurnedFrame` pads for the display cutout and consumes the rest of the window insets, because a turned screen would otherwise pad the wrong physical edge. Soroban mode also hides the system bars, which would otherwise run down a vertical edge with their text on its side.
 - The mode transition fades the incoming screen in over an outgoing one held at full opacity (`ContentTransform` with `fadeOut(snap(delayMillis = FADE_MILLIS))` and `targetContentZIndex = 1f`). Do not fade both at once: that leaves frames where neither screen is opaque and whatever sits behind them flashes through. For the same reason the root `Surface` is painted `colorScheme.background`, the tone the screens themselves paint, not the lighter `colorScheme.surface`.
-- Treat each soroban rod as a decimal digit in `0..9`. Rod arrays are most-significant digit first. The rod count is fixed at `SorobanEngine.ROD_COUNT` (7) and is no longer a user preference; `ShareUtility` still accepts `7..17`.
+- Treat each soroban rod as a decimal digit in `0..9`. Rod arrays are most-significant digit first. The rod count is fixed at `SorobanEngine.ROD_COUNT` (7) and is no longer a user preference.
 - Keep calculator display symbols (`×`, `÷`) separate from parser symbols (`*`, `/`). `CalculatorEngine` owns keypad semantics; `MathEvaluator` owns expression parsing and precedence.
 - Use `BigDecimal` for tax arithmetic and retain the current yen rounding rule (`RoundingMode.DOWN`). Validate input as finite and non-negative before calling `TaxCalculator`.
 - Keep persistence access behind `HistoryDao` and `AppPreferences`. A Room version change requires an explicit migration decision; never silently add destructive fallback behavior.
-- Sharing must remain compatible with the manifest `FileProvider` and `res/xml/file_paths.xml`. Perform bitmap/file work off the main thread and grant URI read permission.
 - Sensor listener lifecycles must remain paired: register and unregister with their Android owners. `OrientationEventListener` in `MainActivity` is enabled in `onStart` and disabled in `onStop`. Text-to-speech has been removed from the product; do not reintroduce it without an explicit request.
 
 ## UI and product conventions
 
 - Preserve the wabi-sabi visual language defined in `ui/theme`: warm paper/charcoal surfaces with moss, indigo, and sakura accents.
-- The soroban instrument itself follows the 黒檀と骨 (Ebony & Bone) handoff and is deliberately outside that theme: an ebony-lacquer frame, brass inlay and rods, a bone reckoning field, and black-lacquer bi-conical beads, identical in light and dark. A lacquered instrument does not change colour with the room, and its palette is fixed in `SorobanCanvas.kt` rather than branched on `isSystemInDarkTheme`. `ShareUtility` carries a flattened version of the same palette so a shared card is the board the user was looking at.
+- The soroban instrument itself follows the 黒檀と骨 (Ebony & Bone) handoff and is deliberately outside that theme: an ebony-lacquer frame, brass inlay and rods, a bone reckoning field, and black-lacquer bi-conical beads, identical in light and dark. A lacquered instrument does not change colour with the room, and its palette is fixed in `SorobanCanvas.kt` rather than branched on `isSystemInDarkTheme`.
 - Geometry in `SorobanCanvas.kt` is written in the handoff's own 768 x 352 coordinate space and scaled by `unit = boardHeight / BOARD_HEIGHT`, so the constants can be read straight against the design. Rod pitch is the only thing that depends on the rod count.
 - Support both system light and dark themes.
 - Put user-facing text in both `res/values/strings.xml` and `res/values-ja/strings.xml`. Existing hard-coded bilingual strings are technical debt, not a pattern to copy.
 - Respect the sound and haptic preference toggles when adding interactions. They are the only two settings left.
-- Canvas behavior, mode changes, accelerometer reset, and Android sharing require device/emulator verification; JVM tests cannot validate them. On an emulator, drive mode changes with `adb emu sensor set acceleration` (`0:9.8:0` upright, `-9.8:0:0` and `9.8:0:0` for the two sideways turns) rather than the rotate control, since the window no longer rotates. Screenshots come out in the window's portrait frame and need turning to be read.
+- Canvas behavior, mode changes, and accelerometer reset require device/emulator verification; JVM tests cannot validate them. On an emulator, drive mode changes with `adb emu sensor set acceleration` (`0:9.8:0` upright, `-9.8:0:0` and `9.8:0:0` for the two sideways turns) rather than the rotate control, since the window no longer rotates. Screenshots come out in the window's portrait frame and need turning to be read.
 
 ## Build and verification
 

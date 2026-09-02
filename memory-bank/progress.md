@@ -13,14 +13,14 @@ Last reviewed: 2026-09-02
 | Japanese TTS | Removed | Voice readout, its preference, and the `TextToSpeech` owner were deleted from the current working tree |
 | Mode switching | Implemented | Window pinned to portrait; the content turns instead. Sensor and そろばん/電卓 buttons write one mode state. The incoming screen fades in over a fully opaque outgoing one, so there is neither a platform rotation snapshot nor a bleached frame |
 | Shake reset | Implemented | Accelerometer listener with threshold and one-second cooldown |
-| Share card | Implemented | Cached 1200×750 fitted PNG through `FileProvider`; zero state supported; duplicate jobs blocked; device chooser required |
+| Share card | Removed | The rail's 共有 button and everything that served it — `ShareUtility`, the manifest `FileProvider`, `file_paths.xml`, and the share strings — were deleted on request |
 | Tax tool | Implemented | 10%/8%, add/remove, yen round-down rules, history integration |
 | Traditional units | Implemented | Any unit in a category can be tapped to become the input unit; length, area, volume, and weight |
 | Practice mode | Implemented | 60-second add/subtract session with auto-focused answers, single-submit guard, and retained score/accuracy results |
 | Settings persistence | Implemented | Bead sound and haptics in SharedPreferences; rod count and TTS preferences removed |
 | Light/dark theme | Implemented | Refined washi/charcoal schemes; emulator-verified in both modes |
 | Responsive UI system | Implemented | Shared washi, ensō, card, pill, header, and metric components; safe insets, tablet keypad cap, and compact-height landscape handling |
-| Japanese-only interface | Implemented | Default resources, dates, history modes, errors, accessibility copy, and share card remain Japanese on every device locale |
+| Japanese-only interface | Implemented | Default resources, dates, history modes, errors, and accessibility copy remain Japanese on every device locale |
 | Tatami planner | Removed | Deleted in current working tree; approximate `畳` conversion remains |
 
 ## Automated coverage
@@ -42,9 +42,9 @@ All pass under `./gradlew test` as of 2026-07-17, including Japanese calculator 
 
 - No tests for `ZenViewModel`, Room DAO/database behavior, or SharedPreferences persistence.
 - No Compose UI or Android instrumentation tests.
-- No automated coverage of canvas hit-testing/animation, the turned frame and its cross-fade, sensors, haptics, sounds, sharing, theme changes, or localization rendering.
+- No automated coverage of canvas hit-testing/animation, the turned frame and its cross-fade, sensors, haptics, sounds, theme changes, or localization rendering.
 - Domain edge-case coverage is intentionally small: calculator repeat/result flows, `Long` boundaries, more Japanese readings, invalid unit input, and timer races merit tests when those areas change.
-- Physical-device verification remains for sensors, haptic character, sound output, end-to-end image sharing, and how the mode cross-fade reads in the hand while the phone is actually being turned.
+- Physical-device verification remains for sensors, haptic character, sound output, and how the mode cross-fade reads in the hand while the phone is actually being turned.
 
 ## Known technical debt
 

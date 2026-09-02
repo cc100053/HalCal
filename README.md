@@ -23,7 +23,6 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 - **Satisfying Interaction**: Custom canvas rendering of bi-conical beads (*soroban-dama*) with drag-and-slide gestures, haptic pops, and spring-snapping physics.
 - **Real-Time Reading**: Displays the numerical value alongside its Japanese Kanji reading (e.g., `十二万三千四百五十六`).
 - **Shake to Reset**: Integrates Android's accelerometer; shaking or using the clear control resets the frame with an immediate undo action.
-- **Abacus Sharing**: Generates a fitted off-screen image card of the current state—including zero—prevents duplicate share jobs, and opens the Android sharing sheet.
 
 ### 2. Normal Calculator Mode (Portrait)
 - Quiet-luxury display hierarchy with a centered ensō wordmark and warm, rounded tactile keys.
@@ -64,7 +63,6 @@ calculator/
 │   │   │   │   │   ├── components/
 │   │   │   │   │   │   ├── CalculatorGrid.kt  (Keypad UI)
 │   │   │   │   │   │   ├── ShakeDetector.kt   (Accelerometer shake listener)
-│   │   │   │   │   │   ├── ShareUtility.kt    (Off-screen bitmap sharing engine)
 │   │   │   │   │   │   ├── SorobanCanvas.kt   (Custom abacus canvas & gestures)
 │   │   │   │   │   │   └── ZenComponents.kt   (Shared visual system components)
 │   │   │   │   │   ├── screens/
@@ -81,7 +79,6 @@ calculator/
 │   │   │   ├── res/
 │   │   │   │   ├── values/strings.xml         (Japanese-only resources)
 │   │   │   │   ├── values/themes.xml          (Window style attributes)
-│   │   │   │   └── xml/file_paths.xml         (Sharing directory definitions)
 │   │   │   └── AndroidManifest.xml            (App settings declaration)
 │   │   └── build.gradle.kts                   (App module build gradle)
 │   └── proguard-rules.pro                     (Release optimizer configs)
