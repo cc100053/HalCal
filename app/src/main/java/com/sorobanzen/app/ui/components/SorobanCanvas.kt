@@ -78,7 +78,16 @@ private const val FIELD_RADIUS = 2f
 /** How far the field's recessed inner shadow reaches down from its top edge. */
 private const val FIELD_RECESS = 13f
 
-private const val BEAM_TOP = 140f
+/*
+ * The one place this departs from the handoff, which puts the beam at 140.
+ *
+ * The lower deck has to hold a 135-unit stack of four beads; the upper deck holds one. At 140 the
+ * lower deck's 168 units left each earth bead 15 units of travel while the heaven bead had 66, so
+ * the lower deck read as packed wall to wall and the upper as empty. Raising the beam moves the
+ * slack to the deck that needs it: the earth beads now travel 45 and the heaven bead 36, which is
+ * still more than its own height. Everything else about the beam is unchanged.
+ */
+private const val BEAM_TOP = 110f
 private const val BEAM_HEIGHT = 18f
 /** How far the beam's shadow falls onto the field below it. */
 private const val BEAM_SHADOW = 16f
