@@ -63,6 +63,7 @@ Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns on
 - The window is pinned to portrait and never rotates. The screen shown is a function of one boolean in `MainActivity`, written both by `OrientationEventListener` and by the そろばん/電卓 buttons; `requestedOrientation` is never set.
 - `TurnedFrame` is the only place that turns content: it measures the child with the window's width and height swapped, draws it rotated, pads for the display cutout, and consumes the remaining insets so the screens inside do not pad the wrong physical edge.
 - A screen that can appear inside `TurnedFrame` must not open a window of its own. Dialogs, bottom sheets, and toasts come up in the window's portrait orientation, not the reader's.
+- Drawn texture — the washi sheet, the ebony grain — comes from a fixed `Random(seed)` pool built once at class load, never from randomness inside a draw body. A draw body runs every frame, so a roll there would make the surface crawl.
 - Practice timer and delayed-next-problem jobs are cancelled on stop and `ViewModel.onCleared()`.
 - Practice UI moves through explicit ready, active, and finished phases; an active sheet disposal completes the session instead of leaving a hidden timer running.
 - Soroban undo restores a size-matched defensive copy of the previous rod state, then recomputes the numeric value.
