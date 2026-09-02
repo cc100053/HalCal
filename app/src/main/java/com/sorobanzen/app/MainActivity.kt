@@ -9,10 +9,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -129,7 +131,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SorobanZenTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
+                // The screens paint `background`; the surface behind them has to be the
+                // same tone, or any frame that is not fully covered shows as a pale flash.
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     var isSettingsActive by rememberSaveable { mutableStateOf(false) }
                     var sorobanMode by rememberSaveable { mutableStateOf(false) }
 
@@ -158,8 +165,19 @@ class MainActivity : ComponentActivity() {
                     AnimatedContent(
                         targetState = sorobanMode,
                         transitionSpec = {
-                            fadeIn(animationSpec = tween(durationMillis = 260, delayMillis = 80))
-                                .togetherWith(fadeOut(animationSpec = tween(durationMillis = 180)))
+                            // The incoming screen fades in *over* an outgoing one that is held
+                            // at full opacity and only dropped once it is completely covered.
+                            // Fading both at once leaves frames where neither is opaque and the
+                            // surface behind shows through as a flash.
+                            ContentTransform(
+                                targetContentEnter = fadeIn(
+                                    animationSpec = tween(durationMillis = FADE_MILLIS)
+                                ),
+                                initialContentExit = fadeOut(
+                                    animationSpec = snap(delayMillis = FADE_MILLIS)
+                                ),
+                                targetContentZIndex = 1f
+                            )
                         },
                         label = "ModeTransition"
                     ) { soroban ->
@@ -193,6 +211,9 @@ class MainActivity : ComponentActivity() {
     private companion object {
         /** Degrees off an axis before the phone counts as being held along it. */
         const val TILT_THRESHOLD = 35
+
+        /** How long the incoming screen takes to cover the outgoing one. */
+        const val FADE_MILLIS = 300
     }
 }
 

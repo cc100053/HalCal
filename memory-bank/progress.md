@@ -11,7 +11,7 @@ Last reviewed: 2026-09-02
 | Landscape soroban | Implemented | Fixed 7 rods, tap/drag, spring animation, pale hinoki/indigo Canvas materials, quiet unboxed control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
 | Japanese readings | Implemented | Kanji through `京`; core case unit-tested; Romaji removed from product and domain |
 | Japanese TTS | Removed | Voice readout, its preference, and the `TextToSpeech` owner were deleted from the current working tree |
-| Mode switching | Implemented | Window pinned to portrait; the content turns instead. Sensor and そろばん/電卓 buttons write one mode state, cross-faded with each side in its own frame. No window rotation, so no platform rotation snapshot |
+| Mode switching | Implemented | Window pinned to portrait; the content turns instead. Sensor and そろばん/電卓 buttons write one mode state. The incoming screen fades in over a fully opaque outgoing one, so there is neither a platform rotation snapshot nor a bleached frame |
 | Shake reset | Implemented | Accelerometer listener with threshold and one-second cooldown |
 | Share card | Implemented | Cached 1200×750 fitted PNG through `FileProvider`; zero state supported; duplicate jobs blocked; device chooser required |
 | Tax tool | Implemented | 10%/8%, add/remove, yen round-down rules, history integration |
