@@ -27,13 +27,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -55,6 +58,7 @@ import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.random.Random
 import kotlinx.coroutines.launch
 
 /*
@@ -143,6 +147,51 @@ private val BeadBounce = Color(0xFFFFF6E0)
 private val BeamShadowColor = Color(0xFF120E0A)
 private val BeadShadowColor = Color(0xFF18120C)
 private val FieldRecessColor = Color(0xFF1E160E)
+
+/**
+ * Ebony is dense and tight-grained, and the frame only reads as a made thing once a little of that
+ * shows. One streak of it, positioned from a fixed seed so the board is identical on every frame
+ * and every device.
+ */
+private class EbonyGrain(
+    /** Across the member's thickness, 0..1. */
+    val offset: Float,
+    /** Where the streak begins along the member's length, 0..1. */
+    val start: Float,
+    /** Fraction of the member's length. Overruns are clipped to the member. */
+    val length: Float,
+    /** How far the streak wanders across the thickness over its run. */
+    val drift: Float,
+    /** 0..1 across the stroke-width range. */
+    val weight: Float,
+    /** Ebony's grain is mostly darker than the body, with the occasional warmer streak. */
+    val warm: Boolean
+)
+
+// Grain tunables. Up here rather than baked into the seeded pool below, so an edit lands without
+// a process restart: a top-level initializer runs once per class load, a draw body every frame.
+// Many fine streaks, not a few strong ones: ebony's grain is tight and high-frequency, and at a
+// low enough count and high enough alpha the same lines read as scratches instead.
+private const val GRAIN_COUNT = 90
+private const val GRAIN_DARK_ALPHA = 0.16f
+private const val GRAIN_WARM_ALPHA = 0.07f
+private const val GRAIN_MIN_WIDTH = 0.18f
+private const val GRAIN_WIDTH_SPAN = 0.45f
+private val GrainWarm = Color(0xFF6E5A42)
+
+private val ebonyGrain = Random(2141).let { random ->
+    List(GRAIN_COUNT) {
+        EbonyGrain(
+            offset = random.nextFloat(),
+            start = random.nextFloat(),
+            length = 0.25f + random.nextFloat() * 0.7f,
+            // Barely any: ebony runs straight, and a visible wander reads as a scratch.
+            drift = (random.nextFloat() - 0.5f) * 0.05f,
+            weight = random.nextFloat(),
+            warm = random.nextFloat() < 0.28f
+        )
+    }
+}
 
 /** Rings used to fake a blurred highlight. Fewer than this and the steps band visibly. */
 private const val SOFT_ELLIPSE_RINGS = 8
@@ -398,6 +447,25 @@ fun SorobanCanvas(
                 ),
                 cornerRadius = CornerRadius(BOARD_RADIUS * unit)
             )
+            // Grain, in four members: the rails run the full width and the stiles sit between
+            // them, so each piece's grain runs along its own length the way a made frame does.
+            // Clipped to the board so nothing strays past the rounded corners.
+            clipPath(
+                Path().apply {
+                    addRoundRect(
+                        RoundRect(
+                            0f, 0f, size.width, size.height,
+                            CornerRadius(BOARD_RADIUS * unit)
+                        )
+                    )
+                }
+            ) {
+                drawEbonyGrain(0f, 0f, size.width, fieldTop, true, 0f, unit)
+                drawEbonyGrain(0f, fieldBottom, size.width, size.height, true, 0.37f, unit)
+                drawEbonyGrain(0f, fieldTop, fieldLeft, fieldBottom, false, 0.61f, unit)
+                drawEbonyGrain(fieldRight, fieldTop, size.width, fieldBottom, false, 0.83f, unit)
+            }
+
             // Edge definition, then the brass sheen that catches along the top lip.
             drawRoundRect(
                 color = Color.Black.copy(alpha = 0.5f),
@@ -492,6 +560,8 @@ fun SorobanCanvas(
                 topLeft = Offset(fieldLeft, beamTopY),
                 size = Size(fieldWidth, BEAM_HEIGHT * unit)
             )
+            // The beam is the same ebony as the frame, so it carries the same grain.
+            drawEbonyGrain(fieldLeft, beamTopY, fieldRight, beamBottomY, true, 0.19f, unit)
             drawLine(
                 color = Brass.copy(alpha = 0.42f),
                 start = Offset(fieldLeft, beamTopY + unit * 0.5f),
@@ -589,6 +659,54 @@ fun SorobanCanvas(
                         }
                 )
             }
+        }
+    }
+}
+
+/**
+ * Lengthwise grain inside one frame member. [alongX] picks the member's long axis, and [phase]
+ * shifts where the pool starts so the four members do not repeat one another.
+ */
+private fun DrawScope.drawEbonyGrain(
+    left: Float,
+    top: Float,
+    right: Float,
+    bottom: Float,
+    alongX: Boolean,
+    phase: Float,
+    unit: Float
+) {
+    val memberWidth = right - left
+    val memberHeight = bottom - top
+    if (memberWidth <= 0f || memberHeight <= 0f) return
+    val run = if (alongX) memberWidth else memberHeight
+    val thickness = if (alongX) memberHeight else memberWidth
+
+    clipRect(left, top, right, bottom) {
+        ebonyGrain.forEach { grain ->
+            val across = grain.offset * thickness
+            val acrossEnd = across + grain.drift * thickness
+            val begin = ((grain.start + phase) % 1f) * run
+            val finish = begin + grain.length * run
+            drawLine(
+                color = if (grain.warm) {
+                    GrainWarm.copy(alpha = GRAIN_WARM_ALPHA)
+                } else {
+                    Color.Black.copy(alpha = GRAIN_DARK_ALPHA)
+                },
+                start = if (alongX) {
+                    Offset(left + begin, top + across)
+                } else {
+                    Offset(left + across, top + begin)
+                },
+                end = if (alongX) {
+                    Offset(left + finish, top + acrossEnd)
+                } else {
+                    Offset(left + acrossEnd, top + finish)
+                },
+                strokeWidth = (GRAIN_MIN_WIDTH + grain.weight * GRAIN_WIDTH_SPAN) * unit,
+                cap = StrokeCap.Round
+            )
         }
     }
 }

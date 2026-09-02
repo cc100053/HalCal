@@ -43,7 +43,7 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 ## UI and product conventions
 
 - Preserve the wabi-sabi visual language defined in `ui/theme`: warm paper/charcoal surfaces with moss, indigo, and sakura accents.
-- The soroban instrument itself follows the 黒檀と骨 (Ebony & Bone) handoff and is deliberately outside that theme: an ebony-lacquer frame, brass inlay and rods, a bone reckoning field, and black-lacquer bi-conical beads, identical in light and dark. A lacquered instrument does not change colour with the room, and its palette is fixed in `SorobanCanvas.kt` rather than branched on `isSystemInDarkTheme`.
+- The soroban instrument itself follows the 黒檀と骨 (Ebony & Bone) handoff and is deliberately outside that theme: an ebony-lacquer frame, brass inlay and rods, a bone reckoning field, and black-lacquer bi-conical beads, identical in light and dark. The frame and the beam carry a fine lengthwise ebony grain drawn from a fixed seed. A lacquered instrument does not change colour with the room, and its palette is fixed in `SorobanCanvas.kt` rather than branched on `isSystemInDarkTheme`.
 - Geometry in `SorobanCanvas.kt` is written in the handoff's own 768 x 352 coordinate space and scaled by `unit = boardHeight / BOARD_HEIGHT`, so the constants can be read straight against the design. Rod pitch is the only thing that depends on the rod count.
 - Support both system light and dark themes.
 - Put user-facing text in both `res/values/strings.xml` and `res/values-ja/strings.xml`. Existing hard-coded bilingual strings are technical debt, not a pattern to copy.
