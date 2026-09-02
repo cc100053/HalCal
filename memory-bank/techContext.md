@@ -44,7 +44,8 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. Andro
 
 ## Platform integrations
 
-- `OrientationEventListener`, owned by `MainActivity`, reporting the phone's physical attitude while the window orientation is pinned.
+- `OrientationEventListener`, owned by `MainActivity`, reporting the phone's physical attitude. It is the only source of that fact, because the window is pinned to portrait and the configuration therefore never changes.
+- `WindowInsetsControllerCompat`, hiding the system bars in soroban mode with swipe-to-reveal behavior and restoring them on the way out.
 - Accelerometer access through `SensorManager`; no dangerous runtime permission is required.
 - Haptics through Compose `LocalHapticFeedback`.
 - Bead clicks through Android view sound effects.

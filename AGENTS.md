@@ -11,7 +11,7 @@ This file is the operating guide for AI agents working in the Soroban Zen reposi
 
 ## Project at a glance
 
-Soroban Zen is a single-module Android application written in Kotlin and Jetpack Compose. Portrait orientation presents a calculator and tool sheets; landscape orientation presents an interactive Japanese soroban. The package and application ID are `com.sorobanzen.app`.
+Soroban Zen is a single-module Android application written in Kotlin and Jetpack Compose. An upright phone presents a calculator and tool sheets; a sideways phone presents an interactive Japanese soroban, drawn turned inside a window that stays in portrait. The package and application ID are `com.sorobanzen.app`.
 
 The main source layers are:
 
@@ -29,8 +29,10 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 - Put deterministic business rules in `domain`, not inside composables.
 - Screens render collected `StateFlow` values and send user actions to `ZenViewModel`; avoid duplicating mutable feature state in UI code.
 - Expose ViewModel state as read-only `StateFlow`/`SharedFlow`. Launch database work and timers in `viewModelScope`.
-- Preserve the orientation contract: portrait is calculator mode, landscape is soroban mode, and settings temporarily takes over either orientation. `MainActivity` swaps screens off `LocalConfiguration` alone; the in-app そろばん/電卓 buttons work by *requesting* an orientation, never by switching content directly, so a rotation and a button press follow the same path.
-- A button's orientation request is a temporary hold, released as soon as the phone is physically turned to match it (tracked with `OrientationEventListener`, since the configuration cannot report the phone's real attitude while the window is pinned). Without that release the app cannot leave the mode the button forced.
+- Preserve the mode contract: an upright phone is calculator mode, a sideways phone is soroban mode, and settings temporarily takes over either. The activity window is pinned to portrait for the life of the app (`android:screenOrientation="portrait"`) and the *content* turns instead — `MainActivity.TurnedFrame` lays the child out with the window's width and height swapped and draws it rotated. Nothing requests a system rotation, so there is no `RotationLayer` snapshot and no ghost of the outgoing screen.
+- Mode is one piece of state. `OrientationEventListener` writes the turn the content needs, and the そろばん/電卓 buttons write the same state directly; a button's choice stands until the phone is next turned. Do not reintroduce `requestedOrientation`, a hold, or a release — there is no window rotation left to wait for.
+- Anything that opens its own window (`Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast`) comes up in the window's portrait orientation, not the reader's, so it is unusable while the phone is sideways. Inside the turned frame use an inline overlay instead — see `SorobanGuideOverlay` — and the existing snackbar host in place of a `Toast`.
+- `TurnedFrame` pads for the display cutout and consumes the rest of the window insets, because a turned screen would otherwise pad the wrong physical edge. Soroban mode also hides the system bars, which would otherwise run down a vertical edge with their text on its side.
 - Treat each soroban rod as a decimal digit in `0..9`. Rod arrays are most-significant digit first. The rod count is fixed at `SorobanEngine.ROD_COUNT` (7) and is no longer a user preference; `ShareUtility` still accepts `7..17`.
 - Keep calculator display symbols (`×`, `÷`) separate from parser symbols (`*`, `/`). `CalculatorEngine` owns keypad semantics; `MathEvaluator` owns expression parsing and precedence.
 - Use `BigDecimal` for tax arithmetic and retain the current yen rounding rule (`RoundingMode.DOWN`). Validate input as finite and non-negative before calling `TaxCalculator`.
@@ -44,7 +46,7 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 - Support both system light and dark themes.
 - Put user-facing text in both `res/values/strings.xml` and `res/values-ja/strings.xml`. Existing hard-coded bilingual strings are technical debt, not a pattern to copy.
 - Respect the sound and haptic preference toggles when adding interactions. They are the only two settings left.
-- Canvas behavior, orientation changes, accelerometer reset, and Android sharing require device/emulator verification; JVM tests cannot validate them. Rotation transitions in particular look worse in the Android Studio device mirror than on hardware — the mirror stretches the system's own `RotationLayer` snapshot well past its real duration.
+- Canvas behavior, mode changes, accelerometer reset, and Android sharing require device/emulator verification; JVM tests cannot validate them. On an emulator, drive mode changes with `adb emu sensor set acceleration` (`0:9.8:0` upright, `-9.8:0:0` and `9.8:0:0` for the two sideways turns) rather than the rotate control, since the window no longer rotates. Screenshots come out in the window's portrait frame and need turning to be read.
 
 ## Build and verification
 
@@ -61,7 +63,7 @@ Choose checks proportional to the change:
 - Domain logic: add focused tests under `app/src/test/java/com/sorobanzen/app/domain/`, then run `./gradlew test`.
 - ViewModel/data changes: run unit tests and add fakes or test dependencies when behavior warrants it.
 - Resources, manifest, or Compose UI: run `./gradlew assembleDebug`; run `./gradlew lint` when feasible.
-- Interaction or platform changes: also manually verify on a device/emulator in portrait and landscape.
+- Interaction or platform changes: also manually verify on a device/emulator with the phone held upright and both ways sideways.
 
 `./gradlew test` is the current passing baseline. Known non-fatal build warnings are recorded in `memory-bank/techContext.md`.
 

@@ -15,9 +15,9 @@ MainActivity
     ├── StateFlow UI state
     └── viewModelScope database jobs and timers
         │
-        ├── portrait ──> CalculatorScreen
+        ├── upright ──> CalculatorScreen
         │                └── tax / units / practice / history sheets
-        ├── landscape ─> SorobanScreen
+        ├── sideways ─> TurnedFrame ──> SorobanScreen
         │                ├── SorobanCanvas
         │                ├── ShakeResetListener
         │                └── ShareUtility
@@ -28,11 +28,11 @@ MainActivity
 
 ### Activity
 
-`MainActivity` constructs the Room database, preferences wrapper, and `ZenViewModelFactory`; owns `TextToSpeech`; applies the Compose theme; and chooses the top-level screen based on orientation/settings state. There is no dependency-injection framework and no `NavHost`.
+`MainActivity` constructs the Room database, preferences wrapper, and `ZenViewModelFactory`; applies the Compose theme; owns `OrientationEventListener` and the mode state it drives; hides and restores the system bars; and chooses the top-level screen from mode/settings state, wrapping it in `TurnedFrame` when the phone is sideways. There is no dependency-injection framework and no `NavHost`.
 
 ### ViewModel
 
-`ZenViewModel` is the feature coordinator and single UI state holder. It exposes immutable flows, delegates deterministic work to domain classes, persists history/settings, and owns practice timer jobs. It intentionally survives the activity's handled orientation changes.
+`ZenViewModel` is the feature coordinator and single UI state holder. It exposes immutable flows, delegates deterministic work to domain classes, persists history/settings, and owns practice timer jobs. A mode change is now only a state change inside one composition, so nothing about it can disturb ViewModel state.
 
 ### Domain
 
@@ -61,7 +61,9 @@ Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns on
 - `rodValues` is copied before mutation so `StateFlow` observers receive a new array instance.
 - Soroban numeric value is formed left-to-right as base 10 and fits in `Long`.
 - Calculator parser errors and division by zero become `Double.NaN`; calculator UI converts non-finite results to `Error` and does not save them.
-- The screen shown is a function of `LocalConfiguration.orientation` alone. Anything that wants a different screen changes `requestedOrientation`; nothing switches content behind the configuration's back.
+- The window is pinned to portrait and never rotates. The screen shown is a function of one boolean in `MainActivity`, written both by `OrientationEventListener` and by the そろばん/電卓 buttons; `requestedOrientation` is never set.
+- `TurnedFrame` is the only place that turns content: it measures the child with the window's width and height swapped, draws it rotated, pads for the display cutout, and consumes the remaining insets so the screens inside do not pad the wrong physical edge.
+- A screen that can appear inside `TurnedFrame` must not open a window of its own. Dialogs, bottom sheets, and toasts come up in the window's portrait orientation, not the reader's.
 - Practice timer and delayed-next-problem jobs are cancelled on stop and `ViewModel.onCleared()`.
 - Practice UI moves through explicit ready, active, and finished phases; an active sheet disposal completes the session instead of leaving a hidden timer running.
 - Soroban undo restores a size-matched defensive copy of the previous rod state, then recomputes the numeric value.

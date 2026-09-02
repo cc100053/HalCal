@@ -33,7 +33,9 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 - Formatted reading of the entry line: parser symbols rendered as `×` and `÷`, spaced operators, and thousands grouping, applied for display only.
 
 ### 2b. Switching Modes
-Turning the phone is the primary switch: upright is the calculator, sideways is the soroban. For a phone that is being kept one way up, the calculator's **そろばん** button and the soroban's **電卓** button turn the window instead — the same cross-fade runs either way. That request lasts only until the phone is physically turned to agree with it, after which rotation behaves normally again.
+Turning the phone is the primary switch: upright is the calculator, sideways is the soroban. For a phone that is being kept one way up, the calculator's **そろばん** button and the soroban's **電卓** button do the same thing directly, and a button's choice stands until the phone is next turned.
+
+The window itself never rotates. It stays in portrait for the life of the app and the soroban is drawn turned inside it, laid out with the screen's width and height swapped. Because the system is never asked to rotate, there is no rotation animation and no snapshot of the outgoing screen to show through: the two modes simply cross-fade in one window. Soroban mode also runs without the system bars, which in a pinned window would sit along a vertical edge; swipe from the edge to bring them back.
 
 ### 3. Traditional Japanese Tools
 - **Consumption Tax Calculator**: Handles standard (10%) and reduced (8% for food/essentials) tax rates with detailed tax breakdowns.
@@ -75,7 +77,7 @@ calculator/
 │   │   │   │   │       ├── Color.kt           (Light & Dark Wabi-sabi palette)
 │   │   │   │   │       ├── Theme.kt           (Material 3 theme configuration)
 │   │   │   │   │       └── Type.kt            (Typography styles)
-│   │   │   │   └── MainActivity.kt            (Entry point, orientation & mode switching)
+│   │   │   │   └── MainActivity.kt            (Entry point, mode switching & the turned frame)
 │   │   │   ├── res/
 │   │   │   │   ├── values/strings.xml         (Japanese-only resources)
 │   │   │   │   ├── values/themes.xml          (Window style attributes)

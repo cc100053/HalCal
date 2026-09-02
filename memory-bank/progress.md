@@ -11,7 +11,7 @@ Last reviewed: 2026-09-02
 | Landscape soroban | Implemented | Fixed 7 rods, tap/drag, spring animation, pale hinoki/indigo Canvas materials, quiet unboxed control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
 | Japanese readings | Implemented | Kanji through `京`; core case unit-tested; Romaji removed from product and domain |
 | Japanese TTS | Removed | Voice readout, its preference, and the `TextToSpeech` owner were deleted from the current working tree |
-| Mode switching | Implemented | Rotation is the primary switch; そろばん/電卓 buttons request the opposite orientation and release the hold once the phone agrees |
+| Mode switching | Implemented | Window pinned to portrait; the content turns instead. Sensor and そろばん/電卓 buttons write one mode state, cross-faded with each side in its own frame. No window rotation, so no platform rotation snapshot |
 | Shake reset | Implemented | Accelerometer listener with threshold and one-second cooldown |
 | Share card | Implemented | Cached 1200×750 fitted PNG through `FileProvider`; zero state supported; duplicate jobs blocked; device chooser required |
 | Tax tool | Implemented | 10%/8%, add/remove, yen round-down rules, history integration |
@@ -42,9 +42,9 @@ All pass under `./gradlew test` as of 2026-07-17, including Japanese calculator 
 
 - No tests for `ZenViewModel`, Room DAO/database behavior, or SharedPreferences persistence.
 - No Compose UI or Android instrumentation tests.
-- No automated coverage of canvas hit-testing/animation, rotation transitions, sensors, haptics, sounds, sharing, theme changes, or localization rendering.
+- No automated coverage of canvas hit-testing/animation, the turned frame and its cross-fade, sensors, haptics, sounds, sharing, theme changes, or localization rendering.
 - Domain edge-case coverage is intentionally small: calculator repeat/result flows, `Long` boundaries, more Japanese readings, invalid unit input, and timer races merit tests when those areas change.
-- Physical-device verification remains for sensors, haptic character, sound output, end-to-end image sharing, and how the rotation transition actually reads on hardware rather than in the device mirror.
+- Physical-device verification remains for sensors, haptic character, sound output, end-to-end image sharing, and how the mode cross-fade reads in the hand while the phone is actually being turned.
 
 ## Known technical debt
 

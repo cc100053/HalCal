@@ -2,17 +2,19 @@
 
 ## Primary experience
 
-The device orientation is the top-level mode selector:
+How the phone is being held is the top-level mode selector:
 
-- **Portrait:** calculator home. Users can open history, settings, tax, traditional units, or practice as overlays/screens.
-- **Landscape:** interactive soroban. Users manipulate rods, inspect numeric/Kanji readings, toggle the sign, clear, shake to reset, share an image, or open usage information.
-- **Settings active:** settings temporarily replaces the orientation-selected screen until the user goes back.
+- **Upright:** calculator home. Users can open history, settings, tax, traditional units, or practice as overlays/screens.
+- **Sideways:** interactive soroban, full screen with the system bars hidden. Users manipulate rods, inspect numeric/Kanji readings, toggle the sign, clear, shake to reset, share an image, or open usage information.
+- **Settings active:** settings temporarily replaces the mode-selected screen until the user goes back, and is drawn in whichever way the phone is being held.
 
-`MainActivity` handles orientation changes itself through manifest `configChanges`; Compose observes `LocalConfiguration` and cross-fades between the two modes.
+The window never rotates. It is pinned to portrait (`android:screenOrientation="portrait"`) and the content turns instead: `MainActivity.TurnedFrame` measures the child with the window's width and height swapped and draws it rotated a quarter turn, so the soroban gets true landscape constraints out of a portrait window. Both modes therefore live in one window that never changes shape, and moving between them is a plain cross-fade the app owns end to end.
 
-A phone that is being kept one way up can still reach the other mode: the calculator's そろばん button and the soroban's 電卓 button request the opposite orientation rather than switching content. The window turns, the configuration changes, and the same cross-fade runs — so a button press and a physical rotation are indistinguishable downstream. That request is only a hold: `MainActivity` watches the phone's real attitude with `OrientationEventListener` and drops the hold the moment the phone is turned to agree with it, which is what allows the next rotation to work normally. Without the drop, the app would be stuck in whichever mode the button forced.
+That is what removed the ghost. Asking the system to rotate produced a `RotationLayer` snapshot of the outgoing frame, drawn by the platform and not suppressible from the app; with no rotation requested there is no snapshot, no re-layout of the outgoing screen into the incoming shape, and nothing to show through.
 
-The system's own rotation transition briefly shows a snapshot of the pre-rotation frame (`Surface(name=RotationLayer)` in the window-manager log). That is not app-drawn and cannot be removed from the app; the Android Studio device mirror exaggerates its duration considerably.
+Mode is a single piece of state. `OrientationEventListener` reports the phone's real attitude — the configuration cannot, since the window is pinned — and writes the quarter turn the content needs; the calculator's そろばん button and the soroban's 電卓 button write that same state directly. A button's choice therefore stands until the phone is next turned, with no orientation request to make and no hold to release. Readings within 35 degrees of an axis commit; the gap between leaves the mode alone, so a phone held at an angle cannot flap between the two screens. A phone held upside down still reads as upright.
+
+One consequence to design around: anything that opens its own window — `Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast` — comes up in the window's portrait orientation rather than the reader's. Inside soroban mode, use an inline overlay (`SorobanGuideOverlay`) and the snackbar host instead.
 
 ## Feature behavior
 

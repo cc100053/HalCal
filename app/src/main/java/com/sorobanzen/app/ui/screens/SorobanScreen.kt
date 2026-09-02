@@ -2,10 +2,11 @@ package com.sorobanzen.app.ui.screens
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
-import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,7 +28,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
@@ -59,7 +60,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
 import com.sorobanzen.app.R
 import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.ui.components.ShakeResetListener
@@ -100,7 +100,7 @@ fun SorobanScreen(
     val formattedValue = remember(sorobanValue) {
         String.format(Locale.ROOT, "%,d", sorobanValue)
     }
-    var showInfoDialog by remember { mutableStateOf(false) }
+    var showGuide by remember { mutableStateOf(false) }
     var isSharing by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -283,11 +283,17 @@ fun SorobanScreen(
                                             )
                                         )
                                     }.onFailure {
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.share_failed),
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        // Not a Toast: the system draws those in the window's
+                                        // own orientation, which is not the reader's here. Its
+                                        // own coroutine, so the share button frees up at once
+                                        // instead of waiting out the message.
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar(
+                                                message = context.getString(R.string.share_failed),
+                                                withDismissAction = true,
+                                                duration = SnackbarDuration.Short
+                                            )
+                                        }
                                     }
                                 } finally {
                                     isSharing = false
@@ -300,7 +306,7 @@ fun SorobanScreen(
                         contentColor = MaterialTheme.colorScheme.primary,
                         onClick = {
                             performHapticFeedback()
-                            showInfoDialog = true
+                            showGuide = true
                         }
                     )
                     SorobanRailAction(
@@ -347,96 +353,118 @@ fun SorobanScreen(
                     .widthIn(max = 420.dp)
                     .padding(bottom = 16.dp)
             )
+
+            if (showGuide) {
+                SorobanGuideOverlay(onClose = { showGuide = false })
+            }
         }
     }
 
-    if (showInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showInfoDialog = false },
+}
+
+/**
+ * The guide lives inside the soroban's own frame rather than in a dialog window. A dialog gets a
+ * window of its own, and that window would come up in the app's portrait orientation instead of
+ * the reader's.
+ */
+@Composable
+private fun BoxScope.SorobanGuideOverlay(onClose: () -> Unit) {
+    BackHandler(onBack = onClose)
+    Box(
+        modifier = Modifier
+            .matchParentSize()
+            .background(Color.Black.copy(alpha = 0.42f))
+            .pointerInput(Unit) { detectTapGestures { onClose() } },
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
             modifier = Modifier
+                .padding(horizontal = 20.dp, vertical = 20.dp)
                 .widthIn(max = 560.dp)
-                .fillMaxWidth(),
-            title = {
+                .fillMaxWidth()
+                // Swallows taps so a press on the card does not read as a press outside it.
+                .pointerInput(Unit) { detectTapGestures { } },
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 6.dp
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = stringResource(id = R.string.soroban_guide_title),
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-            },
-            text = {
-                Column(
+                Spacer(modifier = Modifier.height(14.dp))
+                Row(
                     modifier = Modifier
-                        .widthIn(max = 520.dp)
-                        .verticalScroll(rememberScrollState())
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.width(116.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            modifier = Modifier.width(116.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            SorobanGuidePreview(
-                                accessibilityDescription = stringResource(
-                                    id = R.string.soroban_guide_preview_description
-                                ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(184.dp)
-                                    .clip(MaterialTheme.shapes.medium)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(id = R.string.soroban_guide_example),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                        SorobanGuidePreview(
+                            accessibilityDescription = stringResource(
+                                id = R.string.soroban_guide_preview_description
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(184.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(id = R.string.soroban_guide_example),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
 
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            SorobanGuideRow(
-                                index = 1,
-                                title = stringResource(id = R.string.soroban_guide_heaven_title),
-                                description = stringResource(
-                                    id = R.string.soroban_guide_heaven_description
-                                )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        SorobanGuideRow(
+                            index = 1,
+                            title = stringResource(id = R.string.soroban_guide_heaven_title),
+                            description = stringResource(
+                                id = R.string.soroban_guide_heaven_description
                             )
-                            SorobanGuideRow(
-                                index = 2,
-                                title = stringResource(id = R.string.soroban_guide_earth_title),
-                                description = stringResource(
-                                    id = R.string.soroban_guide_earth_description
-                                )
+                        )
+                        SorobanGuideRow(
+                            index = 2,
+                            title = stringResource(id = R.string.soroban_guide_earth_title),
+                            description = stringResource(
+                                id = R.string.soroban_guide_earth_description
                             )
-                            SorobanGuideRow(
-                                index = 3,
-                                title = stringResource(id = R.string.soroban_guide_dots_title),
-                                description = stringResource(
-                                    id = R.string.soroban_guide_dots_description
-                                )
+                        )
+                        SorobanGuideRow(
+                            index = 3,
+                            title = stringResource(id = R.string.soroban_guide_dots_title),
+                            description = stringResource(
+                                id = R.string.soroban_guide_dots_description
                             )
-                            SorobanGuideRow(
-                                index = 4,
-                                title = stringResource(id = R.string.soroban_guide_value_title),
-                                description = stringResource(
-                                    id = R.string.soroban_guide_value_description
-                                )
+                        )
+                        SorobanGuideRow(
+                            index = 4,
+                            title = stringResource(id = R.string.soroban_guide_value_title),
+                            description = stringResource(
+                                id = R.string.soroban_guide_value_description
                             )
-                        }
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showInfoDialog = false }) {
+                TextButton(
+                    onClick = onClose,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
                     Text(stringResource(id = R.string.close))
                 }
-            },
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        )
+            }
+        }
     }
 }
 
