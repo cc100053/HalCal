@@ -18,11 +18,10 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 
 ### 1. Interactive Soroban Mode (Landscape)
 - **Traditional Layout**: Modern standard 1-5 abacus (1 heaven bead + 4 earth beads per rod).
-- **Responsive Rods**: Configurable from 7 to 17 rods with traditional alignment indicators/dots (dots on every 4th rod representing thousands, millions, etc.).
+- **Fixed 7-Rod Frame**: A seven-rod board with traditional alignment indicators/dots (dots on every 4th rod representing thousands, millions, etc.), sized to stay legible on a phone.
 - **Quiet Control Rail**: A slim, unboxed landscape rail keeps the value, Japanese reading, and essential actions visible without competing with the instrument.
 - **Satisfying Interaction**: Custom canvas rendering of bi-conical beads (*soroban-dama*) with drag-and-slide gestures, haptic pops, and spring-snapping physics.
 - **Real-Time Reading**: Displays the numerical value alongside its Japanese Kanji reading (e.g., `十二万三千四百五十六`).
-- **Text-to-Speech (TTS)**: Built-in voice synthesizer that speaks out numbers in native Japanese pronunciation.
 - **Shake to Reset**: Integrates Android's accelerometer; shaking or using the clear control resets the frame with an immediate undo action.
 - **Abacus Sharing**: Generates a fitted off-screen image card of the current state—including zero—prevents duplicate share jobs, and opens the Android sharing sheet.
 
@@ -31,10 +30,14 @@ The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese m
 - Full support for basic operations (Addition, Subtraction, Multiplication, Division) and precedence math parsing.
 - Access to localized, scrollable bottom sheets for Japanese tools.
 - Room database calculation history with scrollable records, instant reload, and clear-history confirmation.
+- Formatted reading of the entry line: parser symbols rendered as `×` and `÷`, spaced operators, and thousands grouping, applied for display only.
+
+### 2b. Switching Modes
+Turning the phone is the primary switch: upright is the calculator, sideways is the soroban. For a phone that is being kept one way up, the calculator's **そろばん** button and the soroban's **電卓** button turn the window instead — the same cross-fade runs either way. That request lasts only until the phone is physically turned to agree with it, after which rotation behaves normally again.
 
 ### 3. Traditional Japanese Tools
 - **Consumption Tax Calculator**: Handles standard (10%) and reduced (8% for food/essentials) tax rates with detailed tax breakdowns.
-- **Traditional Unit Converter**: Converts metric units to/from length (shaku, sun, ken), area (tsubo, jo), volume (sho, go), and weight (kan, momme) with high accuracy.
+- **Traditional Unit Converter**: Length (shaku, sun, ken), area (tsubo, jo), volume (sho, go), and weight (kan, momme). Any unit in a category can be tapped to become the one you type in.
 - **Practice / Training Mode**: A 60-second mental-math session with immediate answer focus, guarded submissions, and a persistent score/accuracy summary when the session ends.
 
 ---
@@ -72,7 +75,7 @@ calculator/
 │   │   │   │   │       ├── Color.kt           (Light & Dark Wabi-sabi palette)
 │   │   │   │   │       ├── Theme.kt           (Material 3 theme configuration)
 │   │   │   │   │       └── Type.kt            (Typography styles)
-│   │   │   │   └── MainActivity.kt            (Entry point, Orientation & TTS handler)
+│   │   │   │   └── MainActivity.kt            (Entry point, orientation & mode switching)
 │   │   │   ├── res/
 │   │   │   │   ├── values/strings.xml         (Japanese-only resources)
 │   │   │   │   ├── values/themes.xml          (Window style attributes)

@@ -6,13 +6,13 @@
 MainActivity
 ├── HistoryDatabase singleton ──> HistoryDao ──> Room calculation_history
 ├── AppPreferences ───────────────────────────> SharedPreferences
-├── TextToSpeech lifecycle owner
+├── OrientationEventListener (phone attitude, onStart/onStop)
 └── ZenViewModel (activity scoped)
     ├── CalculatorEngine ──> MathEvaluator
     ├── PracticeSession
     ├── SorobanEngine
     ├── TaxCalculator
-    ├── StateFlow UI state / SharedFlow TTS events
+    ├── StateFlow UI state
     └── viewModelScope database jobs and timers
         │
         ├── portrait ──> CalculatorScreen
@@ -32,7 +32,7 @@ MainActivity
 
 ### ViewModel
 
-`ZenViewModel` is the feature coordinator and single UI state holder. It exposes immutable flows, delegates deterministic work to domain classes, persists history/settings, emits TTS events, and owns practice timer jobs. It intentionally survives the activity's handled orientation changes.
+`ZenViewModel` is the feature coordinator and single UI state holder. It exposes immutable flows, delegates deterministic work to domain classes, persists history/settings, and owns practice timer jobs. It intentionally survives the activity's handled orientation changes.
 
 ### Domain
 
@@ -48,7 +48,7 @@ MainActivity
 - `HistoryEntity` maps to `calculation_history` with generated ID, expression, result, mode string, and timestamp.
 - `HistoryDao` exposes newest-first history as `Flow` and suspend insert/clear operations.
 - `HistoryDatabase` is a process singleton named `soroban_zen_database`, schema version 1, without exported schemas or declared migrations.
-- `AppPreferences` wraps `soroban_zen_preferences` and synchronously updates rod count, sound, haptics, and TTS settings.
+- `AppPreferences` wraps `soroban_zen_preferences` and synchronously updates the sound and haptics settings.
 
 ### UI and platform components
 
@@ -56,12 +56,12 @@ Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns on
 
 ## Important invariants
 
-- `rodsCount` is always `7..17`; changing it resets the rod array and current soroban value.
+- `rodsCount` is the constant `SorobanEngine.ROD_COUNT` (7); it is no longer user-adjustable.
 - A rod value is coerced to `0..9`.
 - `rodValues` is copied before mutation so `StateFlow` observers receive a new array instance.
-- Soroban numeric value is formed left-to-right as base 10 and fits in `Long` for the supported maximum of 17 rods.
+- Soroban numeric value is formed left-to-right as base 10 and fits in `Long`.
 - Calculator parser errors and division by zero become `Double.NaN`; calculator UI converts non-finite results to `Error` and does not save them.
-- TTS only emits when the preference is enabled; the activity only speaks after successful Japanese initialization.
+- The screen shown is a function of `LocalConfiguration.orientation` alone. Anything that wants a different screen changes `requestedOrientation`; nothing switches content behind the configuration's back.
 - Practice timer and delayed-next-problem jobs are cancelled on stop and `ViewModel.onCleared()`.
 - Practice UI moves through explicit ready, active, and finished phases; an active sheet disposal completes the session instead of leaving a hidden timer running.
 - Soroban undo restores a size-matched defensive copy of the previous rod state, then recomputes the numeric value.

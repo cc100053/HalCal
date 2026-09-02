@@ -29,21 +29,22 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 - Put deterministic business rules in `domain`, not inside composables.
 - Screens render collected `StateFlow` values and send user actions to `ZenViewModel`; avoid duplicating mutable feature state in UI code.
 - Expose ViewModel state as read-only `StateFlow`/`SharedFlow`. Launch database work and timers in `viewModelScope`.
-- Preserve the orientation contract: portrait is calculator mode, landscape is soroban mode, and settings temporarily takes over either orientation.
-- Treat each soroban rod as a decimal digit in `0..9`. Rod arrays are most-significant digit first. The supported rod count is `7..17`, default `13`.
+- Preserve the orientation contract: portrait is calculator mode, landscape is soroban mode, and settings temporarily takes over either orientation. `MainActivity` swaps screens off `LocalConfiguration` alone; the in-app そろばん/電卓 buttons work by *requesting* an orientation, never by switching content directly, so a rotation and a button press follow the same path.
+- A button's orientation request is a temporary hold, released as soon as the phone is physically turned to match it (tracked with `OrientationEventListener`, since the configuration cannot report the phone's real attitude while the window is pinned). Without that release the app cannot leave the mode the button forced.
+- Treat each soroban rod as a decimal digit in `0..9`. Rod arrays are most-significant digit first. The rod count is fixed at `SorobanEngine.ROD_COUNT` (7) and is no longer a user preference; `ShareUtility` still accepts `7..17`.
 - Keep calculator display symbols (`×`, `÷`) separate from parser symbols (`*`, `/`). `CalculatorEngine` owns keypad semantics; `MathEvaluator` owns expression parsing and precedence.
 - Use `BigDecimal` for tax arithmetic and retain the current yen rounding rule (`RoundingMode.DOWN`). Validate input as finite and non-negative before calling `TaxCalculator`.
 - Keep persistence access behind `HistoryDao` and `AppPreferences`. A Room version change requires an explicit migration decision; never silently add destructive fallback behavior.
 - Sharing must remain compatible with the manifest `FileProvider` and `res/xml/file_paths.xml`. Perform bitmap/file work off the main thread and grant URI read permission.
-- Sensor and TTS lifecycles must remain paired: register/unregister listeners and initialize/shutdown `TextToSpeech` with their Android owners.
+- Sensor listener lifecycles must remain paired: register and unregister with their Android owners. `OrientationEventListener` in `MainActivity` is enabled in `onStart` and disabled in `onStop`. Text-to-speech has been removed from the product; do not reintroduce it without an explicit request.
 
 ## UI and product conventions
 
 - Preserve the wabi-sabi visual language defined in `ui/theme`: warm paper/charcoal surfaces with moss, indigo, and sakura accents.
 - Support both system light and dark themes.
 - Put user-facing text in both `res/values/strings.xml` and `res/values-ja/strings.xml`. Existing hard-coded bilingual strings are technical debt, not a pattern to copy.
-- Respect the sound, haptic, and TTS preference toggles when adding interactions.
-- Canvas behavior, orientation changes, accelerometer reset, Android sharing, and TTS require device/emulator verification; JVM tests cannot validate them.
+- Respect the sound and haptic preference toggles when adding interactions. They are the only two settings left.
+- Canvas behavior, orientation changes, accelerometer reset, and Android sharing require device/emulator verification; JVM tests cannot validate them. Rotation transitions in particular look worse in the Android Studio device mirror than on hardware — the mirror stretches the system's own `RotationLayer` snapshot well past its real duration.
 
 ## Build and verification
 

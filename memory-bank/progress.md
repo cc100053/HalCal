@@ -1,6 +1,6 @@
 # Progress
 
-Last reviewed: 2026-07-17
+Last reviewed: 2026-09-02
 
 ## Capability status
 
@@ -8,15 +8,16 @@ Last reviewed: 2026-07-17
 | --- | --- | --- |
 | Portrait calculator | Implemented | Four operations, decimals, clear controls, precedence, formatted results |
 | Calculation history | Implemented | Room-backed newest-first list; normal and tax entries; load and clear actions |
-| Landscape soroban | Implemented | 7–17 rods, tap/drag, spring animation, pale hinoki/indigo Canvas materials, quiet unboxed control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
+| Landscape soroban | Implemented | Fixed 7 rods, tap/drag, spring animation, pale hinoki/indigo Canvas materials, quiet unboxed control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
 | Japanese readings | Implemented | Kanji through `京`; core case unit-tested; Romaji removed from product and domain |
-| Japanese TTS | Implemented | Preference-gated; device voice/data availability required |
+| Japanese TTS | Removed | Voice readout, its preference, and the `TextToSpeech` owner were deleted from the current working tree |
+| Mode switching | Implemented | Rotation is the primary switch; そろばん/電卓 buttons request the opposite orientation and release the hold once the phone agrees |
 | Shake reset | Implemented | Accelerometer listener with threshold and one-second cooldown |
 | Share card | Implemented | Cached 1200×750 fitted PNG through `FileProvider`; zero state supported; duplicate jobs blocked; device chooser required |
 | Tax tool | Implemented | 10%/8%, add/remove, yen round-down rules, history integration |
-| Traditional units | Implemented | Metric input for length, area, volume, and weight |
+| Traditional units | Implemented | Any unit in a category can be tapped to become the input unit; length, area, volume, and weight |
 | Practice mode | Implemented | 60-second add/subtract session with auto-focused answers, single-submit guard, and retained score/accuracy results |
-| Settings persistence | Implemented | Rod count, bead sound, haptics, and TTS in SharedPreferences |
+| Settings persistence | Implemented | Bead sound and haptics in SharedPreferences; rod count and TTS preferences removed |
 | Light/dark theme | Implemented | Refined washi/charcoal schemes; emulator-verified in both modes |
 | Responsive UI system | Implemented | Shared washi, ensō, card, pill, header, and metric components; safe insets, tablet keypad cap, and compact-height landscape handling |
 | Japanese-only interface | Implemented | Default resources, dates, history modes, errors, accessibility copy, and share card remain Japanese on every device locale |
@@ -41,9 +42,9 @@ All pass under `./gradlew test` as of 2026-07-17, including Japanese calculator 
 
 - No tests for `ZenViewModel`, Room DAO/database behavior, or SharedPreferences persistence.
 - No Compose UI or Android instrumentation tests.
-- No automated coverage of canvas hit-testing/animation, rotation transitions, sensors, haptics, sounds, TTS, sharing, theme changes, or localization rendering.
+- No automated coverage of canvas hit-testing/animation, rotation transitions, sensors, haptics, sounds, sharing, theme changes, or localization rendering.
 - Domain edge-case coverage is intentionally small: calculator repeat/result flows, `Long` boundaries, more Japanese readings, invalid unit input, and timer races merit tests when those areas change.
-- Physical-device verification remains for sensors, haptic character, sound/TTS output, and end-to-end image sharing.
+- Physical-device verification remains for sensors, haptic character, sound output, end-to-end image sharing, and how the rotation transition actually reads on hardware rather than in the device mirror.
 
 ## Known technical debt
 

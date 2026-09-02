@@ -1,6 +1,6 @@
 # Active Context
 
-Last updated: 2026-07-17
+Last updated: 2026-09-02
 
 ## Current product state
 
@@ -8,7 +8,7 @@ The branch is `main`. The current implementation includes:
 
 - `AppPreferences`, `CalculatorEngine`, and `PracticeSession` as focused persistence/domain components.
 - JVM coverage for calculator, parser, practice, soroban Kanji readings, tax, and unit conversion.
-- Persistent rod-count, sound, haptic, and Japanese TTS preferences.
+- Persistent bead-sound and haptic preferences. The rod-count and Japanese-TTS preferences, the settings rows that drove them, and the `TextToSpeech` owner in `MainActivity` have all been removed; the board is a fixed `SorobanEngine.ROD_COUNT` of 7.
 - Safer calculator operator/history behavior, practice submission locking, tax validation, share failure handling, and sensor/share lifecycle fixes.
 - Calculator repeat-equals/no-op handling, capped readable input, and rejection of non-finite loaded results.
 - Practice answer auto-focus, explicit ready/active/finished phases, race-safe timer stopping, capped answer input, and a retained score/accuracy result screen.
@@ -16,23 +16,31 @@ The branch is `main`. The current implementation includes:
 - Native Android Back handling in settings, full-row accessible settings toggles, rounded rod slider values, and current edge-to-edge system-bar handling.
 - Tatami planner domain/UI removed; the approximate `畳` area conversion remains.
 - A cohesive premium UI across calculator, tool sheets, practice, settings, history, and landscape soroban: refined light/dark palettes, serif/sans type hierarchy, procedural washi texture and ensō mark, shared card/pill/metric components, responsive safe-area handling, and an AI-selected pale hinoki Canvas soroban with indigo beads, silver rods, and a quiet unboxed control rail.
+- Two ways into each mode. Rotation remains the primary switch (`targetState = isLandscape`); the calculator's そろばん button and the soroban's 電卓 button request the opposite orientation instead of switching content, so both routes run the identical cross-fade. Each request is a hold released by `OrientationEventListener` as soon as the phone is physically turned to match, which is what lets the following rotation behave normally.
+- Washi `windowBackground` in `values/themes.xml` and `values-night/themes.xml`, matching `LightBg`/`DarkBg`, so a rotation never exposes the platform's black window background.
+- `DisplayFormat` in `domain`, formatting calculator text for reading only — parser glyphs to `×`/`÷`, spaced binary operators, thousands grouping — with the engine still working from its own raw strings. JVM-tested.
+- A traditional-unit converter where any unit in a category can be tapped to become the input unit, backed by a `UnitSpec` table rather than per-pair conversion functions.
 - A Japanese-only product interface. Default Android resources, accessibility descriptions, dates, history labels, errors, Kanji readings, and generated share cards are Japanese on every device locale. English resources and Romaji output have been removed.
 
 `firebase-debug.log` is a local runtime artifact and must remain untracked.
 
 ## Last verification
 
-- `./gradlew test assembleDebug lint` — **passed** on 2026-07-17 after the AI-selected hybrid landscape redesign.
+- `./gradlew test assembleDebug lint` — **passed** on 2026-09-02.
+- Mode switching was checked on an API 36 Pixel 7 emulator on 2026-09-02: rotation in both directions, the そろばん button from an upright phone, the 電卓 button from a sideways phone, and the hold releasing when the phone is turned to agree with it.
+- The residual "ghost" of the previous screen during rotation was traced to the platform, not to app code: the window-manager log shows `start default transition animation ... snapshot=Surface(name=RotationLayer)` with `finishDrawing of orientation change ... 135ms`. Requesting `ROTATION_ANIMATION_JUMPCUT` did not suppress it and was reverted. The Android Studio device mirror holds that snapshot far longer than the device does, so judge this on hardware.
+- `./gradlew test assembleDebug lint` — passed on 2026-07-17 after the AI-selected hybrid landscape redesign.
 - Landscape emulator verification on 2026-07-17 used an API 35 Medium Tablet AVD and covered the zero state, a multi-trillion active value, bead tap, clear, visual guide, zero-state sharing availability, light/dark themes, and a 560 dpi compact-height stress pass without clipping. The final visual comparison has no remaining P0, P1, or P2 findings.
 - Emulator verification on 2026-07-16 covered practice keyboard focus and scored results, settings system-Back behavior, soroban clear/undo restoration, live accessibility descriptions, share-card creation and chooser launch, and light/dark system-bar rendering.
 - Source audit found no user-visible English or Romaji literals.
 - Emulator visual verification completed on 2026-07-16 using an API 36 Pixel 7 AVD with the device locale set to `en-US`. The calculator still rendered Japanese-only labels, including the new `全消` and `一字` keys, without clipping.
 - Earlier emulator checks on API 35/36 covered portrait and landscape, light and dark modes, calculator, tax sheet, settings, responsive tablet keypad, safe drawing insets, and soroban rendering.
-- Physical-device-only behavior (accelerometer shake, audible bead/TTS output, haptic feel, and Android share chooser/file delivery) still requires a real-device pass.
+- Physical-device-only behavior (accelerometer shake, audible bead output, haptic feel, Android share chooser/file delivery, and the true feel of the rotation transition) still requires a real-device pass.
 
 ## Immediate cautions
 
-- Do not restore the deleted Tatami planner unless the user explicitly requests it.
+- Do not restore the deleted Tatami planner or the removed text-to-speech readout unless the user explicitly requests them.
+- Do not make a button switch modes by writing to the mode state directly. It reaches the new content before the window has turned, and the outgoing screen is then re-laid-out into the new orientation and shows through as a stretched ghost. Buttons request an orientation; the configuration switches the content.
 - Keep calculator semantics in `CalculatorEngine` and practice submission rules in `PracticeSession`.
 - Keep the interface Japanese-only; mathematical and international measurement symbols are the only intended Latin-symbol exceptions.
 - Build currently emits the AGP/SDK compatibility warning documented in `techContext.md`.

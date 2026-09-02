@@ -5,10 +5,14 @@
 The device orientation is the top-level mode selector:
 
 - **Portrait:** calculator home. Users can open history, settings, tax, traditional units, or practice as overlays/screens.
-- **Landscape:** interactive soroban. Users manipulate rods, inspect numeric/Kanji readings, invoke Japanese TTS, clear, shake to reset, share an image, or open usage information.
+- **Landscape:** interactive soroban. Users manipulate rods, inspect numeric/Kanji readings, toggle the sign, clear, shake to reset, share an image, or open usage information.
 - **Settings active:** settings temporarily replaces the orientation-selected screen until the user goes back.
 
-`MainActivity` handles orientation changes itself through manifest `configChanges`; Compose observes `LocalConfiguration` and animates between the two modes.
+`MainActivity` handles orientation changes itself through manifest `configChanges`; Compose observes `LocalConfiguration` and cross-fades between the two modes.
+
+A phone that is being kept one way up can still reach the other mode: the calculator's そろばん button and the soroban's 電卓 button request the opposite orientation rather than switching content. The window turns, the configuration changes, and the same cross-fade runs — so a button press and a physical rotation are indistinguishable downstream. That request is only a hold: `MainActivity` watches the phone's real attitude with `OrientationEventListener` and drops the hold the moment the phone is turned to agree with it, which is what allows the next rotation to work normally. Without the drop, the app would be stuck in whichever mode the button forced.
+
+The system's own rotation transition briefly shows a snapshot of the pre-rotation frame (`Surface(name=RotationLayer)` in the window-manager log). That is not app-drawn and cannot be removed from the app; the Android Studio device mirror exaggerates its duration considerably.
 
 ## Feature behavior
 
@@ -62,7 +66,7 @@ The device orientation is the top-level mode selector:
 - System serif is reserved for expressive headings; system sans-serif handles controls, body copy, and numeric displays so Android can select reliable Japanese glyphs without bundled fonts.
 - Shared Compose components provide the procedural washi texture, ensō mark, cards, choice pills, screen headers, and metric tiles. Functional UI does not depend on raster assets.
 - Primary touch targets should remain at least 48dp-class, safe drawing insets must be respected, and wider portrait layouts cap the calculator keypad rather than scaling it indefinitely.
-- Motion and feedback reinforce state changes without becoming busy: short fades for screen changes, spring bead motion, confirmation before destructive history clearing, and preference-gated haptics/sound/TTS.
+- Motion and feedback reinforce state changes without becoming busy: short fades for screen changes, spring bead motion, confirmation before destructive history clearing, and preference-gated haptics and sound.
 
 ## Localization state
 

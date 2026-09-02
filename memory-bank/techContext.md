@@ -44,7 +44,7 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. Andro
 
 ## Platform integrations
 
-- `TextToSpeech` with `Locale.JAPANESE`, owned by `MainActivity`.
+- `OrientationEventListener`, owned by `MainActivity`, reporting the phone's physical attitude while the window orientation is pinned.
 - Accelerometer access through `SensorManager`; no dangerous runtime permission is required.
 - Haptics through Compose `LocalHapticFeedback`.
 - Bead clicks through Android view sound effects.
