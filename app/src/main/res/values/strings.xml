@@ -14,7 +14,7 @@
 
     <!-- 電卓 -->
     <string name="tax">消費税</string>
-    <string name="clear">一字</string>
+    <string name="clear">一桁</string>
     <string name="all_clear">全消</string>
     <string name="result">計算結果</string>
     <string name="expression">数式</string>
@@ -55,6 +55,7 @@
     <string name="metric_kilograms">キログラム（kg）</string>
     <string name="metric_value">メートル法の値</string>
     <string name="converted_units">換算結果</string>
+    <string name="tap_unit_to_input">単位をタップすると、その単位で入力できます。</string>
     <string name="conversion_prompt">0以上の値を入力すると、伝統的な単位での値が表示されます。</string>
 
     <!-- 単位名 -->
@@ -73,7 +74,6 @@
     <string name="shake_to_clear">端末を振ってリセット</string>
     <string name="soroban_interaction_hint">珠をタップ／ドラッグして動かす</string>
     <string name="rod_value">桁の重み：10^%1$d（%2$s）</string>
-    <string name="read_aloud">読み上げ</string>
     <string name="guide">使い方</string>
     <string name="soroban_guide_title">そろばんの読み方</string>
     <string name="soroban_guide_heaven_title">五玉（天珠）</string>
@@ -119,22 +119,17 @@
     <string name="practice_again">もう一度挑戦</string>
 
     <!-- 設定 -->
-    <string name="rods_count">そろばんの桁数</string>
     <string name="sound_effects">珠の打撃音</string>
     <string name="haptics">触覚フィードバック（振動）</string>
     <string name="dark_mode">ダークモード</string>
-    <string name="japanese_readout">日本語数値の音声読み上げ</string>
     <string name="preferences_eyebrow">環境設定</string>
     <string name="settings_subtitle">静けさを保ちながら、手触りを自分好みに整えます。</string>
-    <string name="soroban_setup">そろばんの設定</string>
-    <string name="rods_description">横画面で使うそろばんの桁数を選びます。</string>
     <plurals name="rods_value">
         <item quantity="other">%1$d桁</item>
     </plurals>
     <string name="interaction_settings">操作感</string>
     <string name="sound_effects_description">珠を動かすたび、控えめな打撃音を鳴らします。</string>
     <string name="haptics_description">ボタンや珠の操作を、穏やかな振動で伝えます。</string>
-    <string name="tts_description">現在の数値を日本語で読み上げます。</string>
     <string name="system_theme_note">外観は端末のライト／ダーク設定に合わせて切り替わります。</string>
 
     <!-- 履歴 -->

@@ -2,4 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <!-- Matches LightBg / DarkBg in Color.kt: the sheet the window rests on, so a
+         rotation never exposes black behind the paper. -->
+    <color name="washi_bg">#FFEEECE5</color>
+    <color name="washi_bg_night">#FF161615</color>
 </resources>

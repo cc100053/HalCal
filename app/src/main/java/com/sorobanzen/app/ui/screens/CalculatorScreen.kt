@@ -1,6 +1,7 @@
 package com.sorobanzen.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -25,12 +26,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -57,8 +57,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sorobanzen.app.R
 import com.sorobanzen.app.data.HistoryEntity
+import com.sorobanzen.app.domain.DisplayFormat
+import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.ui.components.CalculatorGrid
 import com.sorobanzen.app.ui.components.ZenBackground
 import com.sorobanzen.app.ui.components.ZenMark
@@ -100,20 +103,11 @@ private fun EndAnchoredLine(
     }
 }
 
-private val binaryOperator = Regex("(?<=[0-9.)])([+\\-*/])")
-
-/** Spaces out binary operators and swaps in the calculator glyphs: "5*3" -> "5 × 3". */
-private fun formatExpression(raw: String): String = binaryOperator
-    .replace(raw) { " ${it.value} " }
-    .replace("*", "×")
-    .replace("/", "÷")
-    .trim()
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculatorScreen(
     viewModel: ZenViewModel,
-    onNavigateToSettings: () -> Unit,
+    onEnterSoroban: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val expr by viewModel.expression.collectAsState()
@@ -141,83 +135,78 @@ fun CalculatorScreen(
                     performHapticFeedback()
                     activeToolSheet = "history"
                 },
-                onSettingsClick = {
+                onSorobanClick = {
                     performHapticFeedback()
-                    onNavigateToSettings()
+                    onEnterSoroban()
                 }
             )
 
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 24.dp, vertical = 10.dp),
-                verticalArrangement = Arrangement.Bottom,
-                horizontalAlignment = Alignment.End
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Text(
+                VerticalLabel(
                     text = stringResource(id = R.string.calculator_eyebrow),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.End
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
-                Spacer(modifier = Modifier.height(10.dp))
-                // Stays empty while typing; the completed expression appears once "=" is pressed.
-                EndAnchoredLine(
-                    text = formatExpression(expr).ifBlank { " " },
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                EndAnchoredLine(
-                    text = formatExpression(displayVal),
-                    style = MaterialTheme.typography.displayLarge,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    // Stays empty while typing; the completed expression appears once "=" is pressed.
+                    EndAnchoredLine(
+                        text = DisplayFormat.expression(expr).ifBlank { " " },
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    EndAnchoredLine(
+                        text = DisplayFormat.expression(displayVal),
+                        style = MaterialTheme.typography.displayLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    // Whole numbers get their Japanese reading; fractions and errors stay silent.
+                    EndAnchoredLine(
+                        text = displayVal.toLongOrNull()
+                            ?.let(SorobanEngine::convertToKanji)
+                            .orEmpty()
+                            .ifBlank { " " },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    OchreHairline()
+                }
             }
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 26.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(26.dp, Alignment.End)
             ) {
-                ToolBadge(
-                    mark = "税",
-                    label = stringResource(id = R.string.tax),
-                    modifier = Modifier.weight(1f)
-                ) {
+                // Each sheet opens carrying the calculator's value, so nothing is retyped.
+                ToolBadge(label = stringResource(id = R.string.tax)) {
                     performHapticFeedback()
+                    viewModel.seedTaxFromCalculator()
                     activeToolSheet = "tax"
                 }
-                ToolBadge(
-                    mark = "尺",
-                    label = stringResource(id = R.string.traditional_units_short),
-                    modifier = Modifier.weight(1f)
-                ) {
+                ToolBadge(label = stringResource(id = R.string.traditional_units_short)) {
                     performHapticFeedback()
+                    viewModel.seedUnitFromCalculator()
                     activeToolSheet = "unit"
-                }
-                ToolBadge(
-                    mark = "±",
-                    label = stringResource(id = R.string.sign_toggle_short),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    performHapticFeedback()
-                    viewModel.onCalculatorKeyPress("±")
                 }
             }
 
             CalculatorGrid(
                 onKeyPress = viewModel::onCalculatorKeyPress,
-                onTaxClick = {
-                    performHapticFeedback()
-                    activeToolSheet = "tax"
-                },
-                taxLabel = stringResource(id = R.string.tax),
+                signLabel = stringResource(id = R.string.sign_toggle_short),
                 clearLabel = stringResource(id = R.string.clear),
                 allClearLabel = stringResource(id = R.string.all_clear),
                 hapticsEnabled = hapticsEnabled,
@@ -278,7 +267,7 @@ fun CalculatorScreen(
 @Composable
 private fun CalculatorTopBar(
     onHistoryClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    onSorobanClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -312,53 +301,81 @@ private fun CalculatorTopBar(
             )
         }
 
-        IconButton(
-            onClick = onSettingsClick,
+        // Balances 計算履歴 on the left; the soroban is a mode, not a settings screen.
+        TextButton(
+            onClick = onSorobanClick,
             modifier = Modifier.align(Alignment.CenterEnd)
         ) {
-            Icon(
-                imageVector = Icons.Default.Settings,
-                contentDescription = stringResource(id = R.string.settings),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            Text(
+                text = stringResource(id = R.string.soroban),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.secondary
             )
         }
     }
 }
 
+/** Plain-text tool control: no chrome, only the word and its touch target. */
 @Composable
 fun ToolBadge(
-    mark: String,
     label: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 52.dp),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        modifier = modifier.heightIn(min = 48.dp),
+        shape = MaterialTheme.shapes.small,
+        color = Color.Transparent,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center
         ) {
             Text(
-                text = mark,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.width(7.dp))
-            Text(
                 text = label,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.titleSmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
     }
+}
+
+/** Hairline that fades in from nothing and settles on ochre at the right edge. */
+@Composable
+private fun OchreHairline(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.28f),
+                        MaterialTheme.colorScheme.primary
+                    )
+                )
+            )
+    )
+}
+
+/** Japanese set vertically: each glyph stays upright on its own line, as writing-mode does. */
+@Composable
+private fun VerticalLabel(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = text.toCharArray().joinToString("\n"),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary,
+        textAlign = TextAlign.Center,
+        lineHeight = 17.sp,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -457,7 +474,7 @@ fun HistoryBottomSheetContent(
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = formatExpression(item.expression),
+                                text = DisplayFormat.expression(item.expression),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

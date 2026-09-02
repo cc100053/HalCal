@@ -3,6 +3,15 @@ package com.sorobanzen.app.domain
 object SorobanEngine {
 
     /**
+     * Rods on the board, fixed rather than configurable. Bead size follows from the rod count —
+     * each rod owns one slot of the field — so the count is what keeps beads taller than the
+     * reckoning beam and comfortably wide on a phone in landscape. Seven digits reach just under
+     * ten million.
+     */
+    const val ROD_COUNT = 7
+
+
+    /**
      * Converts a Long number to its traditional Japanese Kanji representation.
      * Supports up to 99 京 (Quadrillion), which is 17 digits.
      */

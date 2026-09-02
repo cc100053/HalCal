@@ -50,10 +50,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val rodsCount by viewModel.rodsCount.collectAsState()
     val soundEffects by viewModel.soundEffectsEnabled.collectAsState()
     val haptics by viewModel.hapticEnabled.collectAsState()
-    val ttsEnabled by viewModel.ttsEnabled.collectAsState()
 
     BackHandler(onBack = onBack)
 
@@ -89,73 +87,6 @@ fun SettingsScreen(
 
             ZenCard(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = stringResource(id = R.string.soroban_setup),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(id = R.string.rods_count),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(
-                            text = stringResource(id = R.string.rods_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Text(
-                        text = pluralStringResource(
-                            id = R.plurals.rods_value,
-                            count = rodsCount,
-                            rodsCount
-                        ),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Spacer(modifier = Modifier.height(14.dp))
-                Slider(
-                    value = rodsCount.toFloat(),
-                    onValueChange = { value ->
-                        val roundedValue = value.roundToInt()
-                        if (roundedValue != rodsCount) {
-                            viewModel.setRodsCount(roundedValue)
-                        }
-                    },
-                    valueRange = 7f..17f,
-                    steps = 9,
-                    colors = SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.primary,
-                        activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        activeTickColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.62f),
-                        inactiveTickColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.34f)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("7", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("17", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            ZenCard(modifier = Modifier.fillMaxWidth()) {
-                Text(
                     text = stringResource(id = R.string.interaction_settings),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
@@ -173,13 +104,6 @@ fun SettingsScreen(
                     description = stringResource(id = R.string.haptics_description),
                     checked = haptics,
                     onCheckedChange = viewModel::setHapticEnabled
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                SettingsToggleRow(
-                    title = stringResource(id = R.string.japanese_readout),
-                    description = stringResource(id = R.string.tts_description),
-                    checked = ttsEnabled,
-                    onCheckedChange = viewModel::setTtsEnabled
                 )
             }
 

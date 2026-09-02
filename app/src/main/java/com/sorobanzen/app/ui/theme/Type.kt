@@ -10,24 +10,24 @@ private val DisplayFamily = FontFamily.Serif
 private val InterfaceFamily = FontFamily.SansSerif
 
 // Android's system CJK fonts keep the app lightweight and render Japanese reliably.
-// Serif is reserved for a few expressive headings; controls and numerals stay sans-serif.
+// Mincho-style serif carries the numerals, headings and key glyphs; body copy and labels stay sans-serif.
 val Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = DisplayFamily,
-        fontWeight = FontWeight.Light,
-        fontSize = 48.sp,
-        lineHeight = 56.sp,
-        letterSpacing = (-0.8).sp
+        fontWeight = FontWeight.Normal,
+        fontSize = 60.sp,
+        lineHeight = 70.sp,
+        letterSpacing = (-2).sp
     ),
     displayMedium = TextStyle(
-        fontFamily = InterfaceFamily,
+        fontFamily = DisplayFamily,
         fontWeight = FontWeight.Light,
         fontSize = 36.sp,
         lineHeight = 44.sp,
         letterSpacing = (-0.4).sp
     ),
     displaySmall = TextStyle(
-        fontFamily = InterfaceFamily,
+        fontFamily = DisplayFamily,
         fontWeight = FontWeight.Light,
         fontSize = 30.sp,
         lineHeight = 38.sp,
@@ -48,21 +48,21 @@ val Typography = Typography(
         letterSpacing = 0.1.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = InterfaceFamily,
+        fontFamily = DisplayFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 20.sp,
         lineHeight = 28.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
-        fontFamily = InterfaceFamily,
+        fontFamily = DisplayFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.1.sp
     ),
     titleSmall = TextStyle(
-        fontFamily = InterfaceFamily,
+        fontFamily = DisplayFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp,

@@ -1,7 +1,9 @@
 package com.sorobanzen.app.ui.screens
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,13 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -50,11 +47,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +66,7 @@ import com.sorobanzen.app.ui.components.ShakeResetListener
 import com.sorobanzen.app.ui.components.ShareUtility
 import com.sorobanzen.app.ui.components.SorobanCanvas
 import com.sorobanzen.app.ui.components.SorobanGuidePreview
+import com.sorobanzen.app.ui.components.sorobanBoardAspect
 import com.sorobanzen.app.ui.components.ZenBackground
 import com.sorobanzen.app.ui.components.ZenMark
 import com.sorobanzen.app.viewmodel.ZenViewModel
@@ -78,18 +76,19 @@ import kotlinx.coroutines.launch
 @Composable
 fun SorobanScreen(
     viewModel: ZenViewModel,
+    onNavigateToSettings: () -> Unit,
+    onExit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
 
-    val rodsCount by viewModel.rodsCount.collectAsState()
+    val rodsCount = viewModel.rodsCount
     val rodValues by viewModel.rodValues.collectAsState()
     val sorobanValue by viewModel.sorobanValue.collectAsState()
     val soundEnabled by viewModel.soundEffectsEnabled.collectAsState()
     val hapticsEnabled by viewModel.hapticEnabled.collectAsState()
-    val ttsEnabled by viewModel.ttsEnabled.collectAsState()
 
     fun performHapticFeedback() {
         if (hapticsEnabled) {
@@ -128,6 +127,8 @@ fun SorobanScreen(
     ShakeResetListener(enabled = true) {
         clearWithUndo()
     }
+
+    BackHandler(onBack = onExit)
 
     ZenBackground(modifier = modifier.fillMaxSize()) {
         BoxWithConstraints(
@@ -183,7 +184,7 @@ fun SorobanScreen(
 
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start
                     ) {
                         Text(
                             text = pluralStringResource(
@@ -191,13 +192,13 @@ fun SorobanScreen(
                                 count = rodsCount,
                                 rodsCount
                             ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(if (compactHeight) 2.dp else 8.dp))
                         val valueStyle = when {
-                            formattedValue.length <= 8 -> MaterialTheme.typography.displayLarge
-                            formattedValue.length <= 13 -> MaterialTheme.typography.displayMedium
+                            formattedValue.length <= 8 -> MaterialTheme.typography.displayMedium
+                            formattedValue.length <= 13 -> MaterialTheme.typography.displaySmall
                             else -> MaterialTheme.typography.displaySmall.copy(
                                 fontSize = 24.sp,
                                 lineHeight = 30.sp
@@ -206,75 +207,58 @@ fun SorobanScreen(
                         Text(
                             text = formattedValue,
                             style = valueStyle,
-                            fontWeight = FontWeight.Light,
+                            fontWeight = FontWeight.Normal,
                             color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
+                            textAlign = TextAlign.Start,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = kanjiReading,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Start,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
 
                     Spacer(modifier = Modifier.height(sectionGap))
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f)
+                    // Hairline that starts on ochre and fades into the paper.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
                     )
                     Spacer(modifier = Modifier.height(if (compactHeight) 2.dp else 6.dp))
 
                     SorobanRailAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_soroban_volume_up),
-                                contentDescription = null,
-                                modifier = Modifier.size(19.dp)
-                            )
-                        },
-                        label = stringResource(id = R.string.read_aloud),
-                        enabled = ttsEnabled,
+                        label = stringResource(id = R.string.calculator),
                         contentColor = MaterialTheme.colorScheme.primary,
                         onClick = {
                             performHapticFeedback()
-                            viewModel.speakJapaneseNumber(sorobanValue)
+                            onExit()
                         }
                     )
 
                     Spacer(modifier = Modifier.weight(1f))
 
                     SorobanRailAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_soroban_cleaning_services),
-                                contentDescription = null,
-                                modifier = Modifier.size(19.dp)
-                            )
-                        },
                         label = stringResource(id = R.string.clear_beads),
                         enabled = sorobanValue != 0L,
                         onClick = ::clearWithUndo
                     )
                     SorobanRailAction(
-                        icon = {
-                            if (isSharing) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(18.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(19.dp)
-                                )
-                            }
-                        },
                         label = stringResource(id = if (isSharing) R.string.sharing else R.string.share),
                         enabled = !isSharing,
                         contentColor = MaterialTheme.colorScheme.primary,
@@ -312,13 +296,6 @@ fun SorobanScreen(
                         }
                     )
                     SorobanRailAction(
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(19.dp)
-                            )
-                        },
                         label = stringResource(id = R.string.guide),
                         contentColor = MaterialTheme.colorScheme.primary,
                         onClick = {
@@ -326,24 +303,41 @@ fun SorobanScreen(
                             showInfoDialog = true
                         }
                     )
+                    SorobanRailAction(
+                        label = stringResource(id = R.string.settings),
+                        onClick = {
+                            performHapticFeedback()
+                            onNavigateToSettings()
+                        }
+                    )
                 }
 
-                SorobanCanvas(
-                    rodsCount = rodsCount,
-                    rodValues = rodValues,
-                    onRodValueChange = viewModel::updateRodValue,
-                    soundEnabled = soundEnabled,
-                    hapticsEnabled = hapticsEnabled,
-                    accessibilityDescription = stringResource(
-                        id = R.string.soroban_canvas_description,
-                        String.format(Locale.ROOT, "%,d", sorobanValue)
-                    ),
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight(contentHeightFraction)
-                        .shadow(5.dp, instrumentShape, clip = false)
-                        .clip(instrumentShape)
-                )
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    SorobanCanvas(
+                        rodsCount = rodsCount,
+                        rodValues = rodValues,
+                        onRodValueChange = viewModel::updateRodValue,
+                        soundEnabled = soundEnabled,
+                        hapticsEnabled = hapticsEnabled,
+                        accessibilityDescription = stringResource(
+                            id = R.string.soroban_canvas_description,
+                            String.format(Locale.ROOT, "%,d", sorobanValue)
+                        ),
+                        modifier = Modifier
+                            .fillMaxHeight(contentHeightFraction)
+                            .aspectRatio(
+                                ratio = sorobanBoardAspect(rodsCount),
+                                matchHeightConstraintsFirst = true
+                            )
+                            .shadow(5.dp, instrumentShape, clip = false)
+                            .clip(instrumentShape)
+                    )
+                }
             }
 
             SnackbarHost(
@@ -481,9 +475,9 @@ private fun SorobanGuideRow(
     }
 }
 
+/** Plain-text rail entry: no chrome, only the word and a comfortable touch target. */
 @Composable
 private fun SorobanRailAction(
-    icon: @Composable () -> Unit,
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -500,21 +494,18 @@ private fun SorobanRailAction(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp),
+            .heightIn(min = 44.dp),
         shape = MaterialTheme.shapes.small,
         color = Color.Transparent,
         contentColor = resolvedContentColor
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+                .padding(horizontal = 4.dp, vertical = 10.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
-            icon()
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(text = label, style = MaterialTheme.typography.titleSmall)
         }
     }
 }

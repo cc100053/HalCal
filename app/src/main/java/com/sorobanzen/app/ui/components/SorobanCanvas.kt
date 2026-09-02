@@ -50,6 +50,30 @@ import com.sorobanzen.app.R
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
+/**
+ * Reckoning beam thickness, as a fraction of the board height. This is the only knob: there is no
+ * upper clamp, because a ceiling silently swallows changes to the fraction once it binds — the
+ * board then ignores the number you edited.
+ */
+private const val BEAM_HEIGHT_FRACTION = 0.200f
+
+/**
+ * Where the beam sits in the field. The upper deck holds one bead and its travel, so it needs far
+ * less room than the lower deck's four — and a thicker beam has to take its space from somewhere.
+ */
+private const val HEAVEN_DECK_FRACTION = 0.20f
+
+/**
+ * Board width per rod, as a multiple of board height, plus the frame. Sizing the board to its rods
+ * keeps them a bead's width apart instead of spreading them across whatever width is going spare.
+ */
+private const val BOARD_ASPECT_PER_ROD = 0.16f
+private const val BOARD_ASPECT_FRAME = 0.13f
+
+/** Aspect ratio a board of [rodsCount] rods wants, so beads sit close without crowding. */
+fun sorobanBoardAspect(rodsCount: Int): Float =
+    BOARD_ASPECT_PER_ROD * rodsCount + BOARD_ASPECT_FRAME
+
 @Composable
 fun SorobanCanvas(
     rodsCount: Int,
@@ -123,16 +147,19 @@ fun SorobanCanvas(
         val canvasHeight = constraints.maxHeight.toFloat()
         val frameThickness = (minOf(canvasWidth, canvasHeight) * 0.070f).coerceIn(26f, 60f)
         val fieldInset = frameThickness * 0.92f
-        val innerLeft = frameThickness * 1.42f
-        val innerRight = canvasWidth - frameThickness * 1.42f
         val innerTop = fieldInset
         val innerBottom = canvasHeight - fieldInset
         val innerHeight = innerBottom - innerTop
-        val rodSpacing = (innerRight - innerLeft) / (rodsCount - 1).coerceAtLeast(1)
-        val beamHeight = (canvasHeight * 0.050f).coerceIn(20f, 40f)
-        val beamTopY = innerTop + innerHeight * 0.38f
+        // Each rod owns one slot of the field and sits at its centre, so even the outermost bead
+        // stays clear of the frame however wide the board gets.
+        val rodSpacing = (canvasWidth - fieldInset * 2) / rodsCount.coerceAtLeast(1)
+        val innerLeft = fieldInset + rodSpacing / 2f
+        val beamHeight = (canvasHeight * BEAM_HEIGHT_FRACTION).coerceAtLeast(24f)
+        // The upper deck carries one bead and its travel, the lower four plus travel: two slots
+        // against five. Splitting the field that way keeps the decks in proportion.
+        val beamTopY = innerTop + innerHeight * HEAVEN_DECK_FRACTION
         val beamBottomY = beamTopY + beamHeight
-        val beadWidth = (rodSpacing * 0.77f)
+        val beadWidth = (rodSpacing * 0.86f)
             .coerceAtMost(canvasHeight * 0.14f)
             .coerceAtLeast(20f)
         val beadHeight = minOf(beadWidth * 0.60f, innerHeight * 0.085f)
@@ -533,8 +560,8 @@ fun SorobanGuidePreview(
         }
     ) {
         val inset = 3f
-        val beamHeight = (size.height * 0.055f).coerceAtLeast(7f)
-        val beamTop = size.height * 0.42f
+        val beamHeight = (size.height * 0.1650f).coerceAtLeast(20f)
+        val beamTop = size.height * HEAVEN_DECK_FRACTION
         val centerX = size.width / 2f
         val beadWidth = size.width * 0.54f
         val beadHeight = (size.height * 0.105f).coerceAtMost(beadWidth * 0.56f)

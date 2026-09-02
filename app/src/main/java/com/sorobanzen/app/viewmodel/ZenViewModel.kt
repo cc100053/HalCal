@@ -12,13 +12,11 @@ import com.sorobanzen.app.domain.PracticeSession
 import com.sorobanzen.app.domain.PracticeSubmission
 import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.domain.TaxCalculator
+import com.sorobanzen.app.domain.UnitConverter
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -47,10 +45,9 @@ class ZenViewModel(
     val displayText: StateFlow<String> = _displayText.asStateFlow()
 
     // --- Soroban Landscape States ---
-    private val _rodsCount = MutableStateFlow(preferences.rodsCount)
-    val rodsCount: StateFlow<Int> = _rodsCount.asStateFlow()
+    val rodsCount: Int = SorobanEngine.ROD_COUNT
 
-    private val _rodValues = MutableStateFlow(IntArray(preferences.rodsCount))
+    private val _rodValues = MutableStateFlow(IntArray(rodsCount))
     val rodValues: StateFlow<IntArray> = _rodValues.asStateFlow()
 
     private val _sorobanValue = MutableStateFlow(0L)
@@ -63,15 +60,8 @@ class ZenViewModel(
     private val _hapticEnabled = MutableStateFlow(preferences.hapticsEnabled)
     val hapticEnabled: StateFlow<Boolean> = _hapticEnabled.asStateFlow()
 
-    private val _ttsEnabled = MutableStateFlow(preferences.ttsEnabled)
-    val ttsEnabled: StateFlow<Boolean> = _ttsEnabled.asStateFlow()
-
     // --- History Flow ---
     val historyList = historyDao.getAllHistory()
-
-    // --- TTS Event Flow ---
-    private val _ttsEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val ttsEvent: SharedFlow<String> = _ttsEvent.asSharedFlow()
 
     // --- Tax States ---
     private val _taxAmountExcl = MutableStateFlow("0")
@@ -87,8 +77,12 @@ class ZenViewModel(
     private val _unitCategory = MutableStateFlow("length") // "length", "area", "volume", "weight"
     val unitCategory: StateFlow<String> = _unitCategory.asStateFlow()
 
-    private val _metricValue = MutableStateFlow("1.0")
-    val metricValue: StateFlow<String> = _metricValue.asStateFlow()
+    private val _unitValue = MutableStateFlow("1.0")
+    val unitValue: StateFlow<String> = _unitValue.asStateFlow()
+
+    /** Which unit [unitValue] is expressed in. Defaults to the category's metric unit. */
+    private val _unitInput = MutableStateFlow(UnitConverter.baseUnit("length")!!.key)
+    val unitInput: StateFlow<String> = _unitInput.asStateFlow()
 
     // --- Practice/Training Mode States ---
     private val _practicePhase = MutableStateFlow(PracticePhase.READY)
@@ -119,27 +113,12 @@ class ZenViewModel(
     private var nextProblemJob: Job? = null
     private val practiceSession = PracticeSession()
 
-    init {
-        // Observe rods count to update the rodValues array size
-        viewModelScope.launch {
-            _rodsCount.collect { count ->
-                _rodValues.value = IntArray(count)
-                updateSorobanValueFromRods()
-            }
-        }
-    }
-
     // --- Calculator Operations ---
     fun onCalculatorKeyPress(key: String) {
         val state = calculator.press(key)
         publishCalculatorState(state)
 
         state.completedExpression?.let { completedExpression ->
-            state.display.toLongOrNull()?.let { result ->
-                if (result in 0 until 10_000_000_000_000_000L) {
-                    speakJapaneseNumber(result)
-                }
-            }
             saveToHistory(completedExpression, state.display, "通常計算")
         }
     }
@@ -173,12 +152,12 @@ class ZenViewModel(
     }
 
     fun clearSoroban() {
-        _rodValues.value = IntArray(_rodsCount.value)
+        _rodValues.value = IntArray(rodsCount)
         _sorobanValue.value = 0L
     }
 
     fun restoreSoroban(values: IntArray) {
-        if (values.size != _rodsCount.value) return
+        if (values.size != rodsCount) return
         _rodValues.value = values.copyOf().also { rods ->
             rods.indices.forEach { index -> rods[index] = rods[index].coerceIn(0, 9) }
         }
@@ -186,10 +165,9 @@ class ZenViewModel(
     }
 
     fun loadNumberToSoroban(num: Long) {
-        val count = _rodsCount.value
-        val rods = IntArray(count)
+        val rods = IntArray(rodsCount)
         var temp = num.coerceAtLeast(0L)
-        for (i in count - 1 downTo 0) {
+        for (i in rodsCount - 1 downTo 0) {
             rods[i] = (temp % 10).toInt()
             temp /= 10
         }
@@ -217,12 +195,6 @@ class ZenViewModel(
     }
 
     // --- Settings Setters ---
-    fun setRodsCount(count: Int) {
-        val validatedCount = count.coerceIn(7, 17)
-        _rodsCount.value = validatedCount
-        preferences.rodsCount = validatedCount
-    }
-
     fun setSoundEffectsEnabled(enabled: Boolean) {
         _soundEffectsEnabled.value = enabled
         preferences.soundEffectsEnabled = enabled
@@ -231,21 +203,6 @@ class ZenViewModel(
     fun setHapticEnabled(enabled: Boolean) {
         _hapticEnabled.value = enabled
         preferences.hapticsEnabled = enabled
-    }
-
-    fun setTtsEnabled(enabled: Boolean) {
-        _ttsEnabled.value = enabled
-        preferences.ttsEnabled = enabled
-    }
-
-    // --- Japanese TTS Trigger ---
-    fun speakJapaneseNumber(number: Long) {
-        if (_ttsEnabled.value) {
-            val reading = SorobanEngine.convertToKanji(number)
-            viewModelScope.launch {
-                _ttsEvent.emit(reading)
-            }
-        }
     }
 
     // --- Tax Calculator Operations ---
@@ -301,10 +258,34 @@ class ZenViewModel(
     // --- Traditional Unit Converter Operations ---
     fun setUnitCategory(category: String) {
         _unitCategory.value = category
+        // Units do not carry across categories, so input falls back to the new category's metric unit.
+        UnitConverter.baseUnit(category)?.let { _unitInput.value = it.key }
     }
 
-    fun setMetricValue(value: String) {
-        _metricValue.value = value
+    fun setUnitValue(value: String) {
+        _unitValue.value = value
+    }
+
+    /** Types the same quantity in a different unit: 1.5 m becomes 4.95 尺, not 1.5 尺. */
+    fun setUnitInput(key: String, value: String) {
+        _unitInput.value = key
+        _unitValue.value = value
+    }
+
+    /**
+     * The calculator display when it is something a tool sheet can accept. Zero, an error, and a
+     * negative all return null, so opening a sheet on an idle calculator leaves your typing alone.
+     */
+    private fun usableDisplayValue(): String? = _displayText.value.takeIf { text ->
+        text.toDoubleOrNull()?.let { it.isFinite() && it > 0.0 } == true
+    }
+
+    fun seedTaxFromCalculator() {
+        usableDisplayValue()?.let(::updateTaxInput)
+    }
+
+    fun seedUnitFromCalculator() {
+        usableDisplayValue()?.let(::setUnitValue)
     }
 
     // --- Practice/Training Mode Logic ---

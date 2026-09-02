@@ -10,8 +10,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 
 private val DarkColorScheme = darkColorScheme(
-    primary = DarkAccentMoss,
-    secondary = DarkAccentIndigo,
+    primary = DarkAccentOchre,
+    secondary = DarkAccentOchre,
     tertiary = DarkAccentSakura,
     error = DarkAccentSakura,
     background = DarkBg,
@@ -27,12 +27,12 @@ private val DarkColorScheme = darkColorScheme(
     surfaceContainerHigh = DarkSurfaceRaised,
     outline = DarkBorder,
     outlineVariant = DarkBorder.copy(alpha = 0.72f),
-    inversePrimary = LightAccentMoss
+    inversePrimary = LightAccentOchre
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = LightAccentMoss,
-    secondary = LightAccentIndigo,
+    primary = LightAccentOchre,
+    secondary = LightAccentOchre,
     tertiary = LightAccentSakura,
     error = LightAccentSakura,
     background = LightBg,
@@ -48,7 +48,7 @@ private val LightColorScheme = lightColorScheme(
     surfaceContainerHigh = LightSurfaceRaised,
     outline = LightBorder,
     outlineVariant = LightBorder.copy(alpha = 0.76f),
-    inversePrimary = DarkAccentMoss
+    inversePrimary = DarkAccentOchre
 )
 
 private val ZenShapes = Shapes(
