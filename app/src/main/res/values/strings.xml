@@ -145,16 +145,16 @@
     <string name="guide_ten_5_title">3 を足し戻す</string>
     <string name="guide_ten_5_body">払いすぎた 3 を一の位へ足すと、答えの 8 になります。</string>
 
-    <string name="guide_muldiv_1_title">23 × 4 を置く</string>
-    <string name="guide_muldiv_1_body">掛けられる数を右に寄せて置きます。掛ける数 4 は頭に置きます。</string>
-    <string name="guide_muldiv_2_title">部分積を足す</string>
-    <string name="guide_muldiv_2_body">3 × 4 = 12 を一の位から置き、2 × 4 = 8 を一桁左へずらして足します。</string>
-    <string name="guide_muldiv_2_note">部分積</string>
-    <string name="guide_muldiv_3_title">84 ÷ 4 を置く</string>
-    <string name="guide_muldiv_3_body">割られる数を右に寄せて置きます。割る数 4 は頭に置きます。</string>
-    <string name="guide_muldiv_4_title">商を立てる</string>
-    <string name="guide_muldiv_4_body">8 ÷ 4 = 2、4 ÷ 4 = 1。割った分を払い、商を左へ立てていきます。</string>
-    <string name="guide_muldiv_4_note">商</string>
+    <string name="guide_muldiv_1_title">かけ算はたし算</string>
+    <string name="guide_muldiv_1_body">3 × 4 は、3 を 4 回たすことです。まず 3 を置きます。</string>
+    <string name="guide_muldiv_1_note">3 + 3 + 3 + 3</string>
+    <string name="guide_muldiv_2_title">4 回たすと 12</string>
+    <string name="guide_muldiv_2_body">3、6、9、12。たしていくだけで答えが出ます。</string>
+    <string name="guide_muldiv_3_title">わり算はひき算</string>
+    <string name="guide_muldiv_3_body">12 ÷ 4 は、12 から 4 を何回ひけるかです。まず 12 を置きます。</string>
+    <string name="guide_muldiv_3_note">12 − 4 − 4 − 4</string>
+    <string name="guide_muldiv_4_title">3 回ひけて 0</string>
+    <string name="guide_muldiv_4_body">12、8、4、0。ひけた回数の 3 が答えです。</string>
     <string name="soroban_canvas_description">そろばん。現在の値は%1$sです。珠をタップまたはドラッグして動かします。</string>
     <string name="soroban_rod_accessibility">右から%1$d桁目。現在の値は%2$dです。</string>
     <string name="soroban_rod_state">値%1$d</string>

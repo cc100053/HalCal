@@ -276,36 +276,38 @@ private val LESSONS = listOf(
             highlight = 4
         )
     )),
+    // Repeated addition and repeated subtraction, on numbers small enough to watch. The real
+    // technique — partial products, quotient placement — is a lesson of its own and needs every
+    // chapter above it first; what a beginner needs here is what the two operations *are*.
     GuideChapter(R.string.guide_chapter_muldiv, listOf(
         GuideStep(
             title = R.string.guide_muldiv_1_title,
             body = R.string.guide_muldiv_1_body,
-            rods = intArrayOf(0, 0, 0, 2, 3),
-            formula = "23 × 4",
+            rods = intArrayOf(0, 0, 0, 0, 3),
+            note = R.string.guide_muldiv_1_note,
+            formula = "3 × 4",
             highlight = 4
         ),
         GuideStep(
             title = R.string.guide_muldiv_2_title,
             body = R.string.guide_muldiv_2_body,
-            rods = intArrayOf(0, 0, 0, 9, 2),
-            note = R.string.guide_muldiv_2_note,
-            formula = "23 × 4 = 92",
+            rods = intArrayOf(0, 0, 0, 1, 2),
+            formula = "3 × 4 = 12",
             highlight = 3
         ),
         GuideStep(
             title = R.string.guide_muldiv_3_title,
             body = R.string.guide_muldiv_3_body,
-            rods = intArrayOf(0, 0, 0, 8, 4),
-            formula = "84 ÷ 4",
-            highlight = 3
+            rods = intArrayOf(0, 0, 0, 1, 2),
+            note = R.string.guide_muldiv_3_note,
+            formula = "12 ÷ 4"
         ),
         GuideStep(
             title = R.string.guide_muldiv_4_title,
             body = R.string.guide_muldiv_4_body,
-            rods = intArrayOf(0, 0, 0, 2, 1),
-            note = R.string.guide_muldiv_4_note,
-            formula = "84 ÷ 4 = 21",
-            highlight = 3
+            rods = intArrayOf(0, 0, 0, 0, 0),
+            formula = "12 ÷ 4 = 3",
+            highlight = 4
         )
     ))
 )
