@@ -116,3 +116,28 @@ From the root folder `calculator/`:
 .\gradlew.bat assembleDebug
 ```
 The compiled debug APK will be generated under `app/build/outputs/apk/debug/app-debug.apk`.
+
+### Running on an Emulator from the Terminal
+```bash
+# Android SDK tools (add to PATH once, or prefix the commands below)
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH
+
+# 1. Start an emulator (list yours with: emulator -list-avds)
+emulator -avd Pixel_7 &
+adb wait-for-device
+
+# 2. Build, install, and launch
+./gradlew installDebug
+adb shell am start -n com.sorobanzen.app/.MainActivity
+```
+
+Mode switching is driven by the accelerometer, so use the virtual sensor rather
+than the emulator's rotate control (the window itself never rotates):
+```bash
+adb emu sensor set acceleration 0:9.8:0    # upright  → calculator
+adb emu sensor set acceleration -9.8:0:0   # sideways → soroban
+adb emu sensor set acceleration 9.8:0:0    # sideways the other way
+```
+Screenshots (`adb exec-out screencap -p > shot.png`) come out in the window's
+portrait frame and need turning to read soroban mode.
