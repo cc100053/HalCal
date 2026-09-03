@@ -1,7 +1,6 @@
 package com.sorobanzen.app.ui.components
 
 import android.provider.Settings
-import android.view.SoundEffectConstants
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.snap
@@ -41,7 +40,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -483,13 +481,11 @@ fun SorobanCanvas(
     rodsCount: Int,
     rodValues: IntArray,
     onRodValueChange: (rodIndex: Int, newValue: Int) -> Unit,
-    soundEnabled: Boolean,
     hapticsEnabled: Boolean,
     accessibilityDescription: String,
     modifier: Modifier = Modifier
 ) {
     val hapticFeedback = LocalHapticFeedback.current
-    val view = LocalView.current
     val context = LocalContext.current
 
     val latestRods by rememberUpdatedState(rodValues)
@@ -555,9 +551,6 @@ fun SorobanCanvas(
             onRodValueChange(rodIndex, coercedValue)
             if (hapticsEnabled) {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-            }
-            if (soundEnabled) {
-                view.playSoundEffect(SoundEffectConstants.CLICK)
             }
             return true
         }
@@ -649,10 +642,10 @@ fun SorobanCanvas(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(rodsCount, canvasWidth, canvasHeight, soundEnabled, hapticsEnabled) {
+                .pointerInput(rodsCount, canvasWidth, canvasHeight, hapticsEnabled) {
                     detectTapGestures { handleTap(it.x, it.y) }
                 }
-                .pointerInput(rodsCount, canvasWidth, canvasHeight, soundEnabled, hapticsEnabled) {
+                .pointerInput(rodsCount, canvasWidth, canvasHeight, hapticsEnabled) {
                     detectDragGestures(
                         onDragStart = { offset -> beginDrag(offset.x, offset.y) },
                         onDragEnd = { dragRod = -1 },
@@ -880,8 +873,11 @@ const val GUIDE_ROD_COUNT = 5
 
 /** Slower and softer than the instrument's own travel, so a learner can follow the movement. */
 private val GuideBeadEasing = CubicBezierEasing(0.2f, 1.42f, 0.34f, 1f)
-private const val GUIDE_BEAD_TRAVEL_MILLIS = 460
-private const val GUIDE_WASH_MILLIS = 300
+/**
+ * One duration for everything a step change moves: beads, wash, the footer's step bar and the
+ * crossfade of the words. They are one event, so they must start and land together.
+ */
+const val GUIDE_STEP_MILLIS = 460
 
 @Composable
 fun SorobanGuideBoard(
@@ -899,14 +895,23 @@ fun SorobanGuideBoard(
         ) == 0f
     }
     val beadSpec = remember(reduceMotion) {
-        if (reduceMotion) snap() else tween<Float>(GUIDE_BEAD_TRAVEL_MILLIS, easing = GuideBeadEasing)
+        if (reduceMotion) snap() else tween<Float>(GUIDE_STEP_MILLIS, easing = GuideBeadEasing)
     }
     val washSpec = remember(reduceMotion) {
-        if (reduceMotion) snap() else tween<Float>(GUIDE_WASH_MILLIS)
+        if (reduceMotion) snap() else tween<Float>(GUIDE_STEP_MILLIS)
     }
 
-    val heavenAnimatables = remember { List(GUIDE_ROD_COUNT) { Animatable(0f) } }
-    val earthAnimatables = remember { List(GUIDE_ROD_COUNT) { List(4) { Animatable(0f) } } }
+    // Seeded at the first step's state, not at zero: otherwise the board opens empty and the
+    // beads fly in a beat after the sheet has arrived. Later steps still animate, because the
+    // LaunchedEffect below drives them.
+    val heavenAnimatables = remember {
+        List(GUIDE_ROD_COUNT) { Animatable(if (rods.getOrElse(it) { 0 } >= 5) 1f else 0f) }
+    }
+    val earthAnimatables = remember {
+        List(GUIDE_ROD_COUNT) { rod ->
+            List(4) { bead -> Animatable(if (bead < rods.getOrElse(rod) { 0 } % 5) 1f else 0f) }
+        }
+    }
     // The wash slides between rods, so it keeps its last rod while it fades out.
     val washRod = remember { Animatable((highlightRod ?: 0).toFloat()) }
     val washAlpha = remember { Animatable(if (highlightRod == null) 0f else 1f) }

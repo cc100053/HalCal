@@ -43,8 +43,6 @@ class ZenViewModel(
     val sorobanValue: StateFlow<Long> = _sorobanValue.asStateFlow()
 
     // --- Settings States ---
-    private val _soundEffectsEnabled = MutableStateFlow(preferences.soundEffectsEnabled)
-    val soundEffectsEnabled: StateFlow<Boolean> = _soundEffectsEnabled.asStateFlow()
 
     private val _hapticEnabled = MutableStateFlow(preferences.hapticsEnabled)
     val hapticEnabled: StateFlow<Boolean> = _hapticEnabled.asStateFlow()
@@ -155,11 +153,6 @@ class ZenViewModel(
     }
 
     // --- Settings Setters ---
-    fun setSoundEffectsEnabled(enabled: Boolean) {
-        _soundEffectsEnabled.value = enabled
-        preferences.soundEffectsEnabled = enabled
-    }
-
     fun setHapticEnabled(enabled: Boolean) {
         _hapticEnabled.value = enabled
         preferences.hapticsEnabled = enabled

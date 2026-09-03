@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +49,6 @@ fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val soundEffects by viewModel.soundEffectsEnabled.collectAsState()
     val haptics by viewModel.hapticEnabled.collectAsState()
 
     BackHandler(onBack = onBack)
@@ -92,13 +90,6 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
-                SettingsToggleRow(
-                    title = stringResource(id = R.string.sound_effects),
-                    description = stringResource(id = R.string.sound_effects_description),
-                    checked = soundEffects,
-                    onCheckedChange = viewModel::setSoundEffectsEnabled
-                )
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 SettingsToggleRow(
                     title = stringResource(id = R.string.haptics),
                     description = stringResource(id = R.string.haptics_description),

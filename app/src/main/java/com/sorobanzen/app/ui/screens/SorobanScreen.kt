@@ -77,7 +77,6 @@ fun SorobanScreen(
     val rodsCount = viewModel.rodsCount
     val rodValues by viewModel.rodValues.collectAsState()
     val sorobanValue by viewModel.sorobanValue.collectAsState()
-    val soundEnabled by viewModel.soundEffectsEnabled.collectAsState()
     val hapticsEnabled by viewModel.hapticEnabled.collectAsState()
 
     fun performHapticFeedback() {
@@ -282,7 +281,6 @@ fun SorobanScreen(
                         rodsCount = rodsCount,
                         rodValues = rodValues,
                         onRodValueChange = viewModel::updateRodValue,
-                        soundEnabled = soundEnabled,
                         hapticsEnabled = hapticsEnabled,
                         accessibilityDescription = stringResource(
                             id = R.string.soroban_canvas_description,

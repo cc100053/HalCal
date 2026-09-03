@@ -163,7 +163,6 @@
     <string name="undo">元に戻す</string>
 
     <!-- 設定 -->
-    <string name="sound_effects">珠の打撃音</string>
     <string name="haptics">触覚フィードバック（振動）</string>
     <string name="dark_mode">ダークモード</string>
     <string name="preferences_eyebrow">環境設定</string>
@@ -172,7 +171,6 @@
         <item quantity="other">%1$d桁</item>
     </plurals>
     <string name="interaction_settings">操作感</string>
-    <string name="sound_effects_description">珠を動かすたび、控えめな打撃音を鳴らします。</string>
     <string name="haptics_description">ボタンや珠の操作を、穏やかな振動で伝えます。</string>
     <string name="system_theme_note">外観は端末のライト／ダーク設定に合わせて切り替わります。</string>
 
