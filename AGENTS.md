@@ -28,7 +28,7 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 
 - Put deterministic business rules in `domain`, not inside composables.
 - Screens render collected `StateFlow` values and send user actions to `ZenViewModel`; avoid duplicating mutable feature state in UI code.
-- Expose ViewModel state as read-only `StateFlow`/`SharedFlow`. Launch database work and timers in `viewModelScope`.
+- Expose ViewModel state as read-only `StateFlow`/`SharedFlow`. Launch asynchronous database work in `viewModelScope`.
 - Preserve the mode contract: an upright phone is calculator mode, a sideways phone is soroban mode, and settings temporarily takes over either. The activity window is pinned to portrait for the life of the app (`android:screenOrientation="portrait"`) and the *content* turns instead — `MainActivity.TurnedFrame` lays the child out with the window's width and height swapped and draws it rotated. Nothing requests a system rotation, so there is no `RotationLayer` snapshot and no ghost of the outgoing screen.
 - Mode is one piece of state. `OrientationEventListener` writes the turn the content needs, and the そろばん/電卓 buttons write the same state directly; a button's choice stands until the phone is next turned. Do not reintroduce `requestedOrientation`, a hold, or a release — there is no window rotation left to wait for.
 - Anything that opens its own window (`Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast`) comes up in the window's portrait orientation, not the reader's, so it is unusable while the phone is sideways. Inside the turned frame use the inline `UsageGuideSheet` overlay instead, and use the existing snackbar host in place of a `Toast`.

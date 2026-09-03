@@ -221,9 +221,6 @@ fun CalculatorScreen(
         if (activeToolSheet != null) {
             ModalBottomSheet(
                 onDismissRequest = {
-                    if (activeToolSheet == "practice") {
-                        viewModel.stopPractice()
-                    }
                     activeToolSheet = null
                 },
                 sheetState = sheetState,
@@ -248,7 +245,6 @@ fun CalculatorScreen(
                     when (activeToolSheet) {
                         "tax" -> TaxScreen(viewModel = viewModel)
                         "unit" -> UnitConverterScreen(viewModel = viewModel)
-                        "practice" -> PracticeScreen(viewModel = viewModel)
                         "history" -> HistoryBottomSheetContent(
                             history = history,
                             onClearHistory = viewModel::clearHistory,

@@ -48,7 +48,6 @@ The six chapters are:
 
 - **Consumption tax:** add or remove Japan's 10% standard rate or 8% reduced rate. Tax arithmetic uses whole-yen round-down rules and rejects negative or non-finite input.
 - **Traditional units:** length (`尺`, `寸`, `間`), area (`坪`, approximate `畳`), volume (`升`, `合`), and weight (`貫`, `匁`). Any listed unit can be selected as the input unit.
-- **Practice:** a 60-second addition/subtraction session using operands from 1 through 99. Subtraction stays non-negative; each answer is submitted once, feedback locks the field for 1.2 seconds, and the score/accuracy screen remains after stopping or time expiry.
 
 ### Settings and visual system
 
@@ -64,7 +63,7 @@ The six chapters are:
 ├── app/src/main/java/com/sorobanzen/app/
 │   ├── MainActivity.kt
 │   ├── data/                 # Room history and SharedPreferences
-│   ├── domain/               # Calculator, soroban, tax, units, practice
+│   ├── domain/               # Calculator, soroban, tax, and units
 │   ├── ui/
 │   │   ├── components/       # Canvas, calculator grid, sensors, shared UI
 │   │   ├── screens/          # Calculator, soroban, tools, settings, guide

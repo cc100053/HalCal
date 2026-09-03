@@ -54,7 +54,7 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`. Andro
 
 ## Verification baseline (2026-09-03)
 
-`./gradlew test assembleDebug lint` passes after the latest 使い方 guide rewrite. The local JVM suite covers calculator, display formatting, expression parsing, practice rules, soroban readings and bead hit targets, tax, and unit conversion.
+`./gradlew test assembleDebug lint` passes after the latest 使い方 guide rewrite. The local JVM suite covers calculator, display formatting, expression parsing, soroban readings and bead hit targets, tax, and unit conversion.
 
 The latest API 36 Pixel 7 emulator pass checked the six guide chapters, chapter and step navigation, the turned seven-rod layout, both sideways sensor directions, calculator/soroban buttons, settings, system bars, and light/dark rendering.
 

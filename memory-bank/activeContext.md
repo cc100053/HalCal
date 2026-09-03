@@ -6,16 +6,15 @@ Last updated: 2026-09-03
 
 The branch is `main`. The current implementation includes:
 
-- `AppPreferences`, `CalculatorEngine`, and `PracticeSession` as focused persistence/domain components.
-- JVM coverage for calculator, display formatting, parser, practice, soroban Kanji readings and bead hit targets, tax, and unit conversion.
+- `AppPreferences` and `CalculatorEngine` as focused persistence/domain components.
+- JVM coverage for calculator, display formatting, parser, soroban Kanji readings and bead hit targets, tax, and unit conversion.
 - Persistent bead-sound and haptic preferences. The rod-count and Japanese-TTS preferences, the settings rows that drove them, and the `TextToSpeech` owner in `MainActivity` have all been removed; the board is a fixed `SorobanEngine.ROD_COUNT` of 7.
-- Safer calculator operator/history behavior, practice submission locking, tax validation, and sensor lifecycle fixes.
+- Safer calculator operator/history behavior, tax validation, and sensor lifecycle fixes.
 - Calculator repeat-equals/no-op handling, capped readable input, and rejection of non-finite loaded results.
-- Practice answer auto-focus, explicit ready/active/finished phases, race-safe timer stopping, capped answer input, and a retained score/accuracy result screen.
 - Soroban clear undo, responsive unboxed landscape control rail, visual reading guide, bounded snackbar, per-rod adjustable accessibility semantics, and disabled unavailable actions.
 - Native Android Back handling in settings, full-row accessible settings toggles, rounded rod slider values, and current edge-to-edge system-bar handling.
 - Tatami planner domain/UI removed; the approximate `畳` area conversion remains.
-- A cohesive premium UI across calculator, tool sheets, practice, settings, history, and landscape soroban: refined light/dark palettes, serif/sans type hierarchy, procedural washi texture and ensō mark, shared card/pill/metric components, responsive safe-area handling, and a quiet unboxed control rail.
+- A cohesive premium UI across calculator, tool sheets, settings, history, and landscape soroban: refined light/dark palettes, serif/sans type hierarchy, procedural washi texture and ensō mark, shared card/pill/metric components, responsive safe-area handling, and a quiet unboxed control rail.
 - The soroban instrument follows the 黒檀と骨 (Ebony & Bone) design handoff: ebony-lacquer frame with a brass inlay hairline, bone reckoning field, brass rods and diamond unit markers, and black-lacquer bi-conical beads with an equator ridge, specular sheen and contact shadow. `SorobanCanvas.kt` is written in the handoff's 768 x 352 coordinate space and scaled by the board's real height, which is also why `sorobanBoardAspect` now returns a wide, shallow board (2.18 at seven rods) rather than the old squarer one. The palette is fixed in both themes. The frame's four members and the beam carry a fine lengthwise ebony grain from a seeded pool, in the same shape `ZenComponents` uses for the washi sheet; the rails run the board's full width and the stiles sit between them, so each piece's grain runs along its own length.
 - One deliberate departure from that handoff: `BEAM_TOP` is 110 rather than the specified 140. The lower deck carries a 135-unit stack of four beads against the upper deck's one, so at 140 each earth bead had 15 units of travel while the heaven bead had 66, and the lower deck read as packed. At 110 the earth beads travel 45 and the heaven bead 36. Do not "restore" the handoff value; the reasoning is on the constant.
 - Bead travel is the handoff's 360 ms `cubic-bezier(.2, 1.5, .34, 1)`, with the overshoot intact, and snaps instead when the device has animations turned off.
@@ -41,7 +40,7 @@ The branch is `main`. The current implementation includes:
 - `./gradlew test assembleDebug lint` — passed on 2026-09-02.
 - The turned-content design was verified on an API 36 Pixel 7 emulator on 2026-09-02 by driving the virtual accelerometer (`adb emu sensor set acceleration`): both sideways turns render the soroban the right way up, bead taps land correctly through the rotation, accessibility bounds are transformed, the そろばん button works from an upright phone and 電卓 from a sideways one, a button's choice survives until the phone is next turned, an upside-down phone stays on the calculator, a 45-degree hold keeps the current mode, rapid flapping settles correctly, the guide overlay and settings both render turned, back handling is ordered correctly, the bars stay hidden across a background/resume, and light and dark both render.
 - The window is now 1080x2400 in every mode, which is the direct evidence that no window rotation happens any more. The old ghost came from the platform's own rotation transition (`snapshot=Surface(name=RotationLayer)`, `finishDrawing of orientation change ... 135ms`); `ROTATION_ANIMATION_JUMPCUT` had not suppressed it. Removing the rotation removed the snapshot.
-- Earlier API 35/36 emulator passes covered calculator, tax, settings, practice focus/results, safe drawing insets, soroban undo/accessibility, compact tablet layout, and light/dark rendering.
+- Earlier API 35/36 emulator passes covered calculator, tax, settings, safe drawing insets, soroban undo/accessibility, compact tablet layout, and light/dark rendering.
 - Source audit found no user-visible English or Romaji literals; the Japanese-only interface also rendered correctly under an `en-US` device locale.
 - Physical-device-only behavior (accelerometer shake, audible bead output, haptic feel, and the true feel of the mode transition) still requires a real-device pass.
 
@@ -52,7 +51,7 @@ The branch is `main`. The current implementation includes:
 - Do not add a `Dialog`, `AlertDialog`, `ModalBottomSheet`, or `Toast` to a screen that can appear inside `TurnedFrame`. Each opens its own window in the app's portrait orientation, which is not the reader's. Use an inline overlay and the snackbar host.
 - Keep the sensor's dead band. Committing on every reading would flap the mode for a phone held at an angle, and `physicalAngle` starting null is what lets a saved mode survive a recreation that happens inside that band.
 - Do not make the mode transition a symmetric cross-fade, and do not let the root `Surface` keep its default colour. Either one puts a pale flash in the middle of the transition. Verify this with `adb shell screenrecord` and a frame contact sheet, not by eye.
-- Keep calculator semantics in `CalculatorEngine` and practice submission rules in `PracticeSession`.
+- Keep calculator semantics in `CalculatorEngine`.
 - Keep the interface Japanese-only; mathematical and international measurement symbols are the only intended Latin-symbol exceptions.
 - Build currently emits the AGP/SDK compatibility warning documented in `techContext.md`.
 - A test run may need permission to access the user's Gradle cache outside the repository sandbox.
@@ -61,7 +60,7 @@ The branch is `main`. The current implementation includes:
 
 These are observations, not an approved roadmap:
 
-- Add ViewModel tests for history, preferences, timers, and feature orchestration.
+- Add ViewModel tests for history, preferences, and feature orchestration.
 - Add Compose/instrumentation coverage for orientation, sheets, settings, and Japanese-only rendering.
 - Decide whether to update AGP for official SDK 35 support.
 - Enable Room schema export and define a migration/testing policy before schema version 2.

@@ -9,14 +9,13 @@ MainActivity
 ├── OrientationEventListener (phone attitude, onStart/onStop)
 └── ZenViewModel (activity scoped)
     ├── CalculatorEngine ──> MathEvaluator
-    ├── PracticeSession
     ├── SorobanEngine
     ├── TaxCalculator
     ├── StateFlow UI state
-    └── viewModelScope database jobs and timers
+    └── viewModelScope database jobs
         │
         ├── upright ──> CalculatorScreen
-        │                └── tax / units / practice / history sheets
+        │                └── tax / units / history sheets
         ├── sideways ─> TurnedFrame ──> SorobanScreen
         │                ├── SorobanCanvas
         │                └── ShakeResetListener
@@ -31,7 +30,7 @@ MainActivity
 
 ### ViewModel
 
-`ZenViewModel` is the feature coordinator and single UI state holder. It exposes immutable flows, delegates deterministic work to domain classes, persists history/settings, and owns practice timer jobs. A mode change is now only a state change inside one composition, so nothing about it can disturb ViewModel state.
+`ZenViewModel` is the feature coordinator and single UI state holder. It exposes immutable flows, delegates deterministic work to domain classes, and persists history/settings. A mode change is now only a state change inside one composition, so nothing about it can disturb ViewModel state.
 
 ### Domain
 
@@ -40,7 +39,6 @@ MainActivity
 - `SorobanEngine`: stateless Japanese Kanji conversion.
 - `TaxCalculator`: validated `BigDecimal`-based tax breakdowns.
 - `UnitConverter`: stateless conversion constants/functions.
-- `PracticeSession`: stateful submission guard and score/total progression, independent of Android timers.
 
 ### Data
 
@@ -64,8 +62,6 @@ Composables collect ViewModel flows and forward actions. `SorobanCanvas` owns on
 - `TurnedFrame` is the only place that turns content: it measures the child with the window's width and height swapped, draws it rotated, pads for the display cutout, and consumes the remaining insets so the screens inside do not pad the wrong physical edge.
 - A screen that can appear inside `TurnedFrame` must not open a window of its own. Dialogs, bottom sheets, and toasts come up in the window's portrait orientation, not the reader's.
 - Drawn texture — the washi sheet, the ebony grain — comes from a fixed `Random(seed)` pool built once at class load, never from randomness inside a draw body. A draw body runs every frame, so a roll there would make the surface crawl.
-- Practice timer and delayed-next-problem jobs are cancelled on stop and `ViewModel.onCleared()`.
-- Practice UI moves through explicit ready, active, and finished phases; an active sheet disposal completes the session instead of leaving a hidden timer running.
 - Soroban undo restores a size-matched defensive copy of the previous rod state, then recomputes the numeric value.
 
 ## Extension guidance

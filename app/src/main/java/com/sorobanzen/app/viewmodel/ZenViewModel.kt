@@ -8,25 +8,14 @@ import com.sorobanzen.app.data.HistoryDao
 import com.sorobanzen.app.data.HistoryEntity
 import com.sorobanzen.app.domain.CalculatorEngine
 import com.sorobanzen.app.domain.CalculatorState
-import com.sorobanzen.app.domain.PracticeSession
-import com.sorobanzen.app.domain.PracticeSubmission
 import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.domain.TaxCalculator
 import com.sorobanzen.app.domain.UnitConverter
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
-import kotlin.random.Random
-
-enum class PracticePhase {
-    READY,
-    ACTIVE,
-    FINISHED
-}
 
 class ZenViewModel(
     private val historyDao: HistoryDao,
@@ -83,35 +72,6 @@ class ZenViewModel(
     /** Which unit [unitValue] is expressed in. Defaults to the category's metric unit. */
     private val _unitInput = MutableStateFlow(UnitConverter.baseUnit("length")!!.key)
     val unitInput: StateFlow<String> = _unitInput.asStateFlow()
-
-    // --- Practice/Training Mode States ---
-    private val _practicePhase = MutableStateFlow(PracticePhase.READY)
-    val practicePhase: StateFlow<PracticePhase> = _practicePhase.asStateFlow()
-
-    private val _practiceTimeLeft = MutableStateFlow(60)
-    val practiceTimeLeft: StateFlow<Int> = _practiceTimeLeft.asStateFlow()
-
-    private val _practiceScore = MutableStateFlow(0)
-    val practiceScore: StateFlow<Int> = _practiceScore.asStateFlow()
-
-    private val _practiceTotal = MutableStateFlow(0)
-    val practiceTotal: StateFlow<Int> = _practiceTotal.asStateFlow()
-
-    private val _currentProblemText = MutableStateFlow("")
-    val currentProblemText: StateFlow<String> = _currentProblemText.asStateFlow()
-
-    private val _practiceInput = MutableStateFlow("")
-    val practiceInput: StateFlow<String> = _practiceInput.asStateFlow()
-
-    private val _practiceFeedback = MutableStateFlow<PracticeSubmission?>(null)
-    val practiceFeedback: StateFlow<PracticeSubmission?> = _practiceFeedback.asStateFlow()
-
-    private val _isPracticeAnswerLocked = MutableStateFlow(false)
-    val isPracticeAnswerLocked: StateFlow<Boolean> = _isPracticeAnswerLocked.asStateFlow()
-
-    private var timerJob: Job? = null
-    private var nextProblemJob: Job? = null
-    private val practiceSession = PracticeSession()
 
     // --- Calculator Operations ---
     fun onCalculatorKeyPress(key: String) {
@@ -288,103 +248,6 @@ class ZenViewModel(
         usableDisplayValue()?.let(::setUnitValue)
     }
 
-    // --- Practice/Training Mode Logic ---
-    fun startPractice() {
-        nextProblemJob?.cancel()
-        _practicePhase.value = PracticePhase.ACTIVE
-        _practiceScore.value = 0
-        _practiceTotal.value = 0
-        _practiceTimeLeft.value = 60
-        _practiceInput.value = ""
-        _practiceFeedback.value = null
-        _isPracticeAnswerLocked.value = false
-        val firstProblem = createProblem()
-        practiceSession.start(firstProblem.first, firstProblem.second)
-        _currentProblemText.value = firstProblem.first
-        
-        timerJob?.cancel()
-        timerJob = viewModelScope.launch {
-            while (_practiceTimeLeft.value > 0) {
-                delay(1000)
-                if (_practicePhase.value != PracticePhase.ACTIVE) return@launch
-                _practiceTimeLeft.value = (_practiceTimeLeft.value - 1).coerceAtLeast(0)
-            }
-            finishPractice()
-        }
-    }
-
-    fun stopPractice() {
-        if (_practicePhase.value != PracticePhase.ACTIVE) return
-        timerJob?.cancel()
-        finishPractice()
-    }
-
-    fun submitPracticeAnswer() {
-        val submission = practiceSession.submit(_practiceInput.value) ?: return
-        _practiceScore.value = practiceSession.progress.score
-        _practiceTotal.value = practiceSession.progress.total
-        _isPracticeAnswerLocked.value = true
-
-        _practiceFeedback.value = submission
-
-        nextProblemJob?.cancel()
-        nextProblemJob = viewModelScope.launch {
-            delay(1200)
-            _practiceInput.value = ""
-            _practiceFeedback.value = null
-            if (_practicePhase.value == PracticePhase.ACTIVE) {
-                val nextProblem = createProblem()
-                practiceSession.advance(nextProblem.first, nextProblem.second)
-                _currentProblemText.value = nextProblem.first
-                _isPracticeAnswerLocked.value = false
-            }
-        }
-    }
-
-    fun updatePracticeInput(input: String) {
-        if (
-            !_isPracticeAnswerLocked.value &&
-            input.length <= MAX_PRACTICE_INPUT_LENGTH &&
-            input.all(Char::isDigit)
-        ) {
-            _practiceInput.value = input
-        }
-    }
-
-    private fun finishPractice() {
-        _practicePhase.value = PracticePhase.FINISHED
-        _isPracticeAnswerLocked.value = false
-        _practiceInput.value = ""
-        _practiceFeedback.value = null
-        nextProblemJob?.cancel()
-        practiceSession.stop()
-    }
-
-    private fun createProblem(): Pair<String, Long> {
-        // Simple level generator based on standard 1-2 digit additions/subtractions
-        val isAddition = Random.nextBoolean()
-        val num1 = Random.nextLong(1, 100)
-        val num2 = Random.nextLong(1, 100)
-
-        return if (isAddition) {
-            "$num1 + $num2" to (num1 + num2)
-        } else {
-            // Ensure positive result for abacus learning
-            val large = maxOf(num1, num2)
-            val small = minOf(num1, num2)
-            "$large - $small" to (large - small)
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        timerJob?.cancel()
-        nextProblemJob?.cancel()
-    }
-
-    private companion object {
-        const val MAX_PRACTICE_INPUT_LENGTH = 3
-    }
 }
 
 class ZenViewModelFactory(

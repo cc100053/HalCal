@@ -16,7 +16,6 @@ Last reviewed: 2026-09-03
 | Share card | Removed | The rail's 共有 button and everything that served it — `ShareUtility`, the manifest `FileProvider`, `file_paths.xml`, and the share strings — were deleted on request |
 | Tax tool | Implemented | 10%/8%, add/remove, yen round-down rules, history integration |
 | Traditional units | Implemented | Any unit in a category can be tapped to become the input unit; length, area, volume, and weight |
-| Practice mode | Implemented | 60-second add/subtract session with auto-focused answers, single-submit guard, and retained score/accuracy results |
 | Settings persistence | Implemented | Bead sound and haptics in SharedPreferences; rod count and TTS preferences removed |
 | Light/dark theme | Implemented | Refined washi/charcoal schemes; emulator-verified in both modes |
 | Responsive UI system | Implemented | Shared washi, ensō, card, pill, header, and metric components; safe insets, tablet keypad cap, and compact-height landscape handling |
@@ -30,22 +29,21 @@ Current local JVM test classes:
 - `CalculatorEngineTest`: operator replacement and negative history-result loading.
 - `DisplayFormatTest`: grouped display numbers, parser glyphs, spacing, and signed values.
 - `MathEvaluatorTest`: precedence and malformed parentheses.
-- `PracticeSessionTest`: duplicate submission guard and blank input.
 - `SorobanEngineTest`: four-digit Japanese Kanji units.
 - `SorobanBeadTargetTest`: tap and drag target selection for earth beads.
 - `TaxCalculatorTest`: invalid input and add/remove rounding behavior.
 - `UnitConverterTest`: representative round trips.
 
-All 33 local JVM tests pass under `./gradlew test` as of 2026-09-03, including Japanese calculator error display, repeat-equals stability, no-op equals, finite history loading, readable input-length coverage, and soroban bead hit-target coverage.
+All 31 local JVM tests pass under `./gradlew test` as of 2026-09-03, including Japanese calculator error display, repeat-equals stability, no-op equals, finite history loading, readable input-length coverage, and soroban bead hit-target coverage.
 
-`assembleDebug` and `lint` also pass as of 2026-09-03. The latest API 36 Pixel 7 pass covered the six-chapter guide, chapter and step navigation, focused rod wash, the turned seven-rod layout, both sideways sensor directions, calculator/soroban buttons, settings, hidden system bars, and light/dark rendering. Earlier phone/tablet checks covered practice focus/results, tax, safe insets, soroban undo/accessibility, and compact-height layout. No actionable P0, P1, or P2 visual findings remain.
+`assembleDebug` and `lint` also pass as of 2026-09-03. The latest API 36 Pixel 7 pass covered the six-chapter guide, chapter and step navigation, focused rod wash, the turned seven-rod layout, both sideways sensor directions, calculator/soroban buttons, settings, hidden system bars, and light/dark rendering. Earlier phone/tablet checks covered tax, safe insets, soroban undo/accessibility, and compact-height layout. No actionable P0, P1, or P2 visual findings remain.
 
 ## Coverage gaps
 
 - No tests for `ZenViewModel`, Room DAO/database behavior, or SharedPreferences persistence.
 - No Compose UI or Android instrumentation tests.
 - No automated coverage of canvas hit-testing/animation, the turned frame and its cross-fade, sensors, haptics, sounds, theme changes, or localization rendering.
-- Domain edge-case coverage is intentionally small: calculator repeat/result flows, `Long` boundaries, more Japanese readings, invalid unit input, and timer races merit tests when those areas change.
+- Domain edge-case coverage is intentionally small: calculator repeat/result flows, `Long` boundaries, more Japanese readings, and invalid unit input merit tests when those areas change.
 - Physical-device verification remains for sensors, haptic character, sound output, and how the mode cross-fade reads in the hand while the phone is actually being turned.
 
 ## Known technical debt

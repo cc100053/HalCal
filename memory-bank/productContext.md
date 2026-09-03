@@ -4,7 +4,7 @@
 
 How the phone is being held is the top-level mode selector:
 
-- **Upright:** calculator home. Users can open history, settings, tax, traditional units, or practice as overlays/screens.
+- **Upright:** calculator home. Users can open history, settings, tax, or traditional units as overlays/screens.
 - **Sideways:** interactive soroban, full screen with the system bars hidden. Users manipulate rods, inspect numeric/Kanji readings, clear, shake to reset, or open usage information.
 - **Settings active:** settings temporarily replaces the mode-selected screen until the user goes back, and is drawn in whichever way the phone is being held.
 
@@ -48,15 +48,6 @@ One consequence to design around: anything that opens its own window — `Dialog
 - Volume: litres to `升` and `合`.
 - Weight: kilograms to `貫` and `匁`.
 - Domain utilities also provide reverse conversions, although the current UI is metric-input only.
-
-### Practice
-
-- A session lasts 60 seconds.
-- Problems randomly use addition or subtraction with operands from 1 through 99.
-- Subtraction is ordered so the answer is non-negative.
-- Each problem accepts one submission, shows feedback, locks input for 1.2 seconds, then advances while the session remains active.
-- Starting or advancing focuses the answer field and opens the numeric keyboard.
-- Stopping or reaching zero seconds retains a score and accuracy result screen; dismissing or rotating away ends an active session cleanly.
 
 ## Design language
 
