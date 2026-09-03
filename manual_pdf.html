@@ -33,8 +33,8 @@
     body {
       background-color: #3b3a38;
       font-family: var(--font-sans);
-      font-size: 11.5px;
-      line-height: 1.55;
+      font-size: 12px;
+      line-height: 1.6;
       color: var(--color-sumi);
       -webkit-font-smoothing: antialiased;
       padding: 20px 0;
@@ -59,7 +59,7 @@
       width: 210mm;
       height: 297mm;
       margin: 0 auto 30px auto;
-      padding: 13mm 15mm;
+      padding: 12mm 14mm;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
       position: relative;
       overflow: hidden;
@@ -143,10 +143,10 @@
        ========================================================================== */
     h2 {
       font-family: var(--font-serif);
-      font-size: 13.5px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--color-sumi);
-      margin: 8px 0 5px 0;
+      margin: 10px 0 6px 0;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -162,7 +162,7 @@
     }
 
     p.lead-text {
-      font-size: 10.5px;
+      font-size: 10.8px;
       color: var(--color-sumi);
       margin-bottom: 6px;
       line-height: 1.5;
@@ -171,14 +171,15 @@
     .dense-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 10px;
+      font-size: 10.4px;
       background: rgba(255, 255, 255, 0.72);
       border: 1px solid var(--color-border);
     }
 
     .dense-table th, .dense-table td {
       border: 1px solid var(--color-border);
-      padding: 4px 7px;
+      padding: 5px 8px;
+      vertical-align: top;
       text-align: left;
     }
 
@@ -202,11 +203,13 @@
     .wabi-box {
       border-left: 2.5px solid var(--color-kincha);
       background: rgba(245, 240, 228, 0.7);
-      padding: 5px 10px;
-      margin: 6px 0;
-      font-size: 9.8px;
-      line-height: 1.5;
+      padding: 6px 11px;
+      margin: 7px 0;
+      font-size: 10.1px;
+      line-height: 1.55;
     }
+
+        .wabi-box p + p { margin-top: 3px; }
 
     .wabi-box strong {
       font-family: var(--font-serif);
@@ -250,25 +253,23 @@
       height: auto;
     }
 
-    /* 1ページ目：縦型電卓スクショ（幅180pxに固定） */
-    .shot-calc { width: 175px; }
-    .shot-calc .mock { width: 175px; height: 320px; }
+    .shot-wrap { flex-shrink: 0; }
 
-    /* 2ページ目：横型そろばんスクショ（幅240pxに固定） */
-    .shot-soroban { width: 250px; }
-    .shot-soroban .mock { width: 250px; height: 145px; }
+    /* 1ページ目：縦持ち電卓の捕獲画 */
+    .shot-calc { width: 200px; }
 
-    .mock {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #8c877d;
-      font-size: 10px;
+    /* 2ページ目：横持ちそろばんの捕獲画（画像は90度起こして収録） */
+    .shot-soroban { width: 72%; }
+
+    /* 2ページ目：内蔵手引「使い方」の捕獲画 */
+    .shot-guide { width: 265px; }
+
+    .shot-caption {
+      font-size: 8.6px;
+      color: var(--color-hai);
       text-align: center;
-      border: 1px dashed #3a3832;
       line-height: 1.4;
-      padding: 8px;
+      margin-top: 3px;
     }
 
     /* 朱印ピンバッジ */
@@ -315,9 +316,19 @@
     }
 
     .card-panel ul {
-      padding-left: 15px;
-      font-size: 9.5px;
-      line-height: 1.5;
+      padding-left: 16px;
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .card-panel ul li { margin-bottom: 1px; }
+
+    .card-panel .footnote {
+      display: block;
+      margin-top: 3px;
+      font-size: 9.2px;
+      color: var(--color-hai);
+      line-height: 1.45;
     }
 
     /* 使い方 3x2 グリッド */
@@ -351,8 +362,8 @@
       margin-right: 3px;
     }
 
-    .guide-item p {
-      font-size: 9px;
+        .guide-item p {
+      font-size: 9.4px;
       color: var(--color-hai);
       line-height: 1.35;
     }
@@ -373,6 +384,8 @@
       .a4-page {
         margin: 0 !important;
         box-shadow: none !important;
+        /* 297mmちょうどだと丸め誤差で末尾が溢れ、空白の一頁が生まれる */
+        height: 296.5mm !important;
         page-break-after: always !important;
         break-after: page !important;
         -webkit-print-color-adjust: exact;
@@ -435,12 +448,13 @@
           <tr>
             <td><strong>横持ち</strong></td>
             <td>和式七桁そろばん</td>
-            <td>使い方の教え。音効、触感の設定ができます。</td>
+            <td>珠を指で運ぶ七桁の算盤。左の操作レールから「使い方」と「設定」を開けます。</td>
           </tr>
         </tbody>
       </table>
       <div class="wabi-box">
-        <strong>【手動切替】</strong> 電卓の「そろばん」刻印、そろばんレールの「電卓」刻印を押せば手動で切り替わります。
+        <strong>【手動切替】</strong> 電卓右上の<span class="key-tag">そろばん</span>、そろばんレールの<span class="key-tag">電卓</span>を押せば手動でも切り替わります。押して選んだ様式は、端末を再び持ち替えるまで保たれます。<br>
+        <strong>【窓の構え】</strong> 窓そのものは常に縦向きに固定され、横持ちでは中身だけが九十度起きて描かれます。そろばん様式では上下の帯（システムバー）が隠れ、画面端から撫でれば一時的に現れます。
       </div>
     </section>
 
@@ -449,20 +463,17 @@
       <h2>第二章　電卓モード</h2>
       <div class="section-row">
         <!-- 電卓スクリーンショット配置枠 -->
-        <div class="shot-box shot-calc">
-          <!-- 実画像に差し替える場合は下の <img> を有効化してください -->
-          <!-- <img src="screenshots/calculator.png" alt="電卓画面"> -->
-          <div class="mock">
-            【電卓画面の捕獲画】<br>
-            <code>screenshots/calculator.png</code><br>
-            (幅 175px 推奨)
+        <div class="shot-wrap">
+          <div class="shot-box shot-calc">
+            <img src="screenshots/calculator.png" alt="縦持ち・電卓画面">
+            <div class="pin" style="top: 5.2%; left: 9%;">一</div>
+            <div class="pin" style="top: 5.2%; left: 91%;">二</div>
+            <div class="pin" style="top: 39.5%; left: 22%;">三</div>
+            <div class="pin" style="top: 53.5%; left: 46%;">四</div>
+            <div class="pin" style="top: 60.3%; left: 7%;">五</div>
+            <div class="pin" style="top: 77.5%; left: 84%;">六</div>
           </div>
-          <div class="pin" style="top: 11%; left: 50%;">一</div>
-          <div class="pin" style="top: 24%; left: 50%;">二</div>
-          <div class="pin" style="top: 41%; left: 78%;">三</div>
-          <div class="pin" style="top: 62%; left: 50%;">四</div>
-          <div class="pin" style="top: 92%; left: 78%;">五</div>
-          <div class="pin" style="top: 92%; left: 50%;">六</div>
+          <div class="shot-caption">縦持ち・電卓様式<br>1,234 × 56 を計算した状態</div>
         </div>
 
         <!-- 機能解説テーブル -->
@@ -478,42 +489,42 @@
             <tbody>
               <tr>
                 <td class="pin-num">一</td>
-                <td><strong>算盤表示・漢数字</strong></td>
-                <td>三桁カンマ区切り表示。整数の結果には対応する<strong>漢数字の位取り読み</strong>が自動で寄り添います。</td>
+                <td><strong>計算履歴</strong></td>
+                <td>成立した計算と消費税の操作を新しい順に収めた記録簿を開きます。行を押せばその結果が電卓へ戻り、消去は確認を経ます。そろばんの珠の動きは記録しません。</td>
               </tr>
               <tr>
                 <td class="pin-num">二</td>
-                <td><strong>和の計算具切替</strong></td>
-                <td>「消費税（一割/ 八分）」および伝統の「尺貫法」度量衡換算を呼び出します。</td>
+                <td><strong>そろばん転換</strong></td>
+                <td>押せばその場で和式そろばんの様式へ移ります（窓は縦向きのまま、中身が起きます）。</td>
               </tr>
               <tr>
                 <td class="pin-num">三</td>
-                <td><strong>払拭・符号反転</strong></td>
-                <td>
-                  <span class="key-tag">一桁</span> 現在入力を払う / <span class="key-tag">全払</span> すべて初期化。<br>
-                  <span class="key-tag">符号</span> で正負の符号を反転します。
-                </td>
+                <td><strong>算盤表示・漢数字</strong></td>
+                <td>上段に確定した数式、中段に三桁カンマ区切りの値。整数の結果には<strong>漢数字の位取り読み</strong>が自動で寄り添います。桁があふれても末尾（今打った桁）が残るよう、右端に留まります。</td>
               </tr>
               <tr>
                 <td class="pin-num">四</td>
-                <td><strong>四則演算鍵</strong></td>
-                <td>乗除優先（×÷先、＋−後）を厳格に計算。<span class="key-tag">＝</span>連続打鍵による反復計算に対応。内部パーサは括弧式も解釈。</td>
+                <td><strong>和の計算具</strong></td>
+                <td><span class="key-tag">消費税</span> と <span class="key-tag">単位</span>（尺貫法換算）を下から迫り出す帳面で開きます。いずれも電卓の値を携えて開くので、打ち直しは要りません。</td>
               </tr>
               <tr>
                 <td class="pin-num">五</td>
-                <td><strong>そろばん転換</strong></td>
-                <td>タップで即座に横向きの和式そろばん画面へ遷移します。</td>
+                <td><strong>訂正・符号反転</strong></td>
+                <td>
+                  <span class="key-tag">一桁</span> 末尾を一つ払う / <span class="key-tag">全消</span> すべて初期化 /
+                  <span class="key-tag">符号</span> 正負を反転。小数点 <span class="key-tag">・</span> は一つの数につき一度だけ受け付けます。
+                </td>
               </tr>
               <tr>
                 <td class="pin-num">六</td>
-                <td><strong>計算履歴</strong></td>
-                <td>計算完了は最新順に自動保存されます。</td>
+                <td><strong>四則演算鍵と ＝</strong></td>
+                <td>乗除優先（×÷先、＋−後）で厳格に計算。<span class="key-tag">＝</span> の連打で同じ演算を反復します。内部の解釈器は括弧と符号も解しますが、鍵盤に括弧は出していません。</td>
               </tr>
             </tbody>
           </table>
 
-          <div class="wabi-box" style="margin-top: 6px;">
-            <strong>【space】</strong> space
+          <div class="wabi-box" style="margin-top: 7px;">
+            <strong>【控えめな手触り】</strong> 打鍵の触覚（振動）は「設定」で入切できます。音は鳴りません。明暗の装いは端末の設定に従い、アプリ内に切替はありません。
           </div>
         </div>
       </div>
@@ -524,23 +535,24 @@
       <h2>第三章　和の計算具（消費税と尺貫法）</h2>
       <div class="grid-2">
         <div class="card-panel">
-          <h3>💴 日本の消費税計算</h3>
+          <h3>日本の消費税計算</h3>
           <ul>
-            <li><strong>税率選択：</strong>一割（標準税率）および 八分（軽減税率）</li>
-            <li><strong>計算種別：</strong>税込加算・税抜逆算の双方向対応</li>
-            <li><strong>端数処理：</strong>日本の商習慣に則る<strong>「円未満切り捨て」</strong></li>
-            ※負数や無限大の入力は安全のため除外されます。
+            <li><strong>税率選択：</strong>標準税率（10%）／軽減税率（8%）</li>
+            <li><strong>計算種別：</strong><span class="key-tag">税込にする</span> と <span class="key-tag">税抜にする</span> の双方向</li>
+            <li><strong>明細表示：</strong>税抜金額・消費税額・税込金額を並べて示します</li>
+            <li><strong>端数処理：</strong>商習慣に則る<strong>「円未満切り捨て」</strong></li>
           </ul>
+          <span class="footnote">※負数や無限の値は受け付けず、入力のやり直しを促します。</span>
         </div>
         <div class="card-panel">
-          <h3>📐 尺貫法の度量衡換算</h3>
+          <h3>尺貫法の度量衡換算</h3>
           <ul>
-            <li><strong>長さ：</strong>尺（しゃく）、寸（すん）、間（けん）</li>
-            <li><strong>広さ：</strong>坪（つぼ）、畳（じょう・概算基準値）</li>
-            <li><strong>容積：</strong>升（しょう）、合（ごう）</li>
-            <li><strong>重さ：</strong>貫（かん）、匁（もんめ）</li>
-            ※表示単位のいずれかを起点に入力し相互換算が可能。
+            <li><strong>長さ：</strong>尺（しゃく）、寸（すん）、間（けん）／ m 起点</li>
+            <li><strong>広さ：</strong>坪（つぼ）、畳（じょう・概算）／ m² 起点</li>
+            <li><strong>容積：</strong>升（しょう）、合（ごう）／ L 起点</li>
+            <li><strong>重さ：</strong>貫（かん）、匁（もんめ）／ kg 起点</li>
           </ul>
+          <span class="footnote">※電卓では <span class="key-tag">単位</span> と刻まれています。表示中の単位を押せば、その単位を入力側に据えて相互に換算できます。</span>
         </div>
       </div>
     </section>
@@ -570,7 +582,7 @@
         </div>
       </div>
       <div class="header-meta">
-        和式七桁そろばん ＆ 内蔵手引
+        和式七桁そろばん・内蔵手引
       </div>
     </header>
 
@@ -581,25 +593,24 @@
         黒檀の木目、真鍮の桁棒と象嵌定位点、骨色の算台、黒漆調の双円錐珠を描画します。
       </p>
 
-      <div class="section-row" style="align-items: center;">
-        <!-- 横向きそろばんスクリーンショット配置枠 -->
-        <div class="shot-box shot-soroban">
-          <!-- <img src="screenshots/soroban.png" alt="そろばん画面"> -->
-          <div class="mock">
-            【そろばん画面の捕獲画】<br>
-            <code>screenshots/soroban.png</code><br>
-            (幅 250px 推奨)
+      <div style="margin: 6px 0 8px 0; text-align: center;">
+        <!-- 横持ちそろばんの捕獲画（九十度起こして収録） -->
+        <div class="shot-wrap">
+          <div class="shot-box shot-soroban">
+            <img src="screenshots/soroban.png" alt="横持ち・そろばん画面">
+            <div class="pin" style="top: 20%; left: 19%;">一</div>
+            <div class="pin" style="top: 67.6%; left: 20%;">二</div>
+            <div class="pin" style="top: 25.8%; left: 33%;">三</div>
+            <div class="pin" style="top: 38.7%; left: 59.3%;">四</div>
+            <div class="pin" style="top: 60.5%; left: 33%;">五</div>
           </div>
-          <div class="pin" style="top: 15%; left: 88%;">一</div>
-          <div class="pin" style="top: 24%; left: 45%;">二</div>
-          <div class="pin" style="top: 44%; left: 45%;">三</div>
-          <div class="pin" style="top: 72%; left: 45%;">四</div>
-          <div class="pin" style="top: 90%; left: 24%;">五</div>
+          <div class="shot-caption">横持ち・そろばん様式（捕獲画は九十度起こしています）／置かれた数は 69,104</div>
         </div>
+      </div>
 
-        <!-- そろばん説明テーブル -->
-        <div style="flex: 1;">
-          <table class="dense-table">
+      <!-- そろばん説明テーブル -->
+      <div>
+        <table class="dense-table">
             <thead>
               <tr>
                 <th style="width: 10%;">印</th>
@@ -610,47 +621,54 @@
             <tbody>
               <tr>
                 <td class="pin-num">一</td>
-                <td><strong>操作レール</strong></td>
-                <td>電卓への帰還、ご破算（払う）、「使い方」、「設定」を格納。</td>
+                <td><strong>数値・漢数字</strong></td>
+                <td>「7桁」の見出しの下に、盤面の値を三桁区切りの算用数字と漢数字で常時同期表示。</td>
               </tr>
               <tr>
                 <td class="pin-num">二</td>
-                <td><strong>天珠（五珠）</strong></td>
-                <td>一桁に一つ配された値「五」。梁へ寄せることで加算されます。</td>
+                <td><strong>操作レール</strong></td>
+                <td><span class="key-tag">電卓</span>／<span class="key-tag">そろばんを払う</span>／<span class="key-tag">使い方</span>／<span class="key-tag">設定</span> の四つ。零のときは「払う」が沈み、押せません。</td>
               </tr>
               <tr>
                 <td class="pin-num">三</td>
-                <td><strong>梁と定位点</strong></td>
-                <td>珠を留める境界棒。真鍮の定位点が千・百万の位を示します。</td>
+                <td><strong>天珠（五珠）</strong></td>
+                <td>一桁に一つ配された値「五」。梁へ下げることで加算されます。</td>
               </tr>
               <tr>
                 <td class="pin-num">四</td>
-                <td><strong>地珠（一珠×4）</strong></td>
-                <td>一桁に四つ。梁へ上げるごとに「一」加算。七桁固定（零〜九九九万）。</td>
+                <td><strong>梁と定位点</strong></td>
+                <td>珠を留める境界棒。真鍮の菱形は四桁ごとの区切りで、七桁の盤では<strong>千の位</strong>に一つ現れます。</td>
               </tr>
               <tr>
                 <td class="pin-num">五</td>
-                <td><strong>数値・漢数字</strong></td>
-                <td>置かれた盤面の数値を算用数字および漢数字で常時同期表示。</td>
+                <td><strong>地珠（一珠×四）</strong></td>
+                <td>一桁に四つ。梁へ上げるごとに「一」加算。七桁固定（0 〜 9,999,999）。珠はタップでも指で引いても動きます。</td>
               </tr>
             </tbody>
-          </table>
-        </div>
+        </table>
       </div>
 
       <div class="wabi-box">
-        <strong>【ご破算と端末を振る所作】</strong> 操作レールの払うボタンのほか、<strong>端末本体を一度軽く振る（Shake）</strong>ことでも盤面をご破算に清められます。誤操作時も直後に現れる<strong>「元に戻す」</strong>で直前の盤面へ瞬時に復帰します。
+        <strong>【ご破算と端末を振る所作】</strong> 操作レールの <span class="key-tag">そろばんを払う</span> のほか、<strong>端末本体を一度軽く振る</strong>ことでも盤面を清められます。いずれの場合も直後に現れる <span class="key-tag">元に戻す</span> を押せば、直前の盤面へ戻ります。盤面の値は計算履歴には残りません。
       </div>
     </section>
 
     <!-- 第五章：使い方ガイド -->
-    <section style="margin-top: 10px;">
+    <section style="margin-top: 6px;">
       <h2>第五章　内蔵手引「使い方」六章</h2>
       <p class="lead-text">
-        横向きの構えを維持したまま、五桁の見本盤面とステップ表示で学べるインラインオーバーレイです。
+        横持ちの構えを保ったまま重ねて開く手引きです。上部に六つの章の見出し、左に読み取り専用の五桁見本盤、右に手順の題と説明（必要に応じ覚え書きや式）、下に手順の点と <span class="key-tag">戻る</span> <span class="key-tag">次へ</span> <span class="key-tag">閉じる</span> を備えます。右上には「何番目 / 全何手順」が示されます。
       </p>
 
-      <div class="guide-grid">
+      <div class="section-row" style="align-items: flex-start; margin-bottom: 4px;">
+        <div class="shot-wrap">
+          <div class="shot-box shot-guide">
+            <img src="screenshots/guide.png" alt="内蔵手引「使い方」">
+          </div>
+          <div class="shot-caption">「読み方」第一手順の様子</div>
+        </div>
+        <div style="flex: 1;">
+          <div class="guide-grid" style="grid-template-columns: repeat(2, 1fr); margin: 0;">
         <div class="guide-item">
           <strong><span class="guide-num">一</span>読み方</strong>
           <p>天珠・地珠の数え方と真鍮定位点が示す位取りを弁える。</p>
@@ -664,37 +682,39 @@
           <p>五珠の繰り入れを伴わない素直な加算と減算の指運び。</p>
         </div>
         <div class="guide-item">
-          <strong><span class="guide-num">四</span>五をつかう</strong>
+          <strong><span class="guide-num">四</span>5をつかう</strong>
           <p>五の合成分解（五珠を繰り入れ、不要な一珠を払う手並み）。</p>
         </div>
         <div class="guide-item">
-          <strong><span class="guide-num">五</span>十をつかう</strong>
+          <strong><span class="guide-num">五</span>10をつかう</strong>
           <p>十の補数を用いて隣の桁へと位を渡す繰り上がり・下がり。</p>
         </div>
         <div class="guide-item">
           <strong><span class="guide-num">六</span>かけ算・わり算</strong>
           <p>九九を用いた積の置き方、商を立てて引く割算の道筋。</p>
         </div>
+          </div>
+        </div>
       </div>
-      <p style="font-size: 9px; color: var(--color-hai); margin-top: 3px;">
-        ※各章は「次へ」「戻る」で連続して受講でき、最終章で「もう一度」に変化します。「閉じる」で即座に計算へ復帰できます。
+      <p style="font-size: 9.2px; color: var(--color-hai); margin-top: 2px;">
+        ※<span class="key-tag">次へ</span> <span class="key-tag">戻る</span> は章の境を越えて続き、次章に入る手前では「次は ○○」と行き先を告げます。最終手順で <span class="key-tag">次へ</span> は <span class="key-tag">もう一度</span> に変わります。見出しを押せばその章の第一手順から始まり、<span class="key-tag">閉じる</span> で盤面へ戻ります。
       </p>
     </section>
 
     <!-- 補足・仕様諸元 -->
-    <section style="margin-top: 10px;">
+    <section style="margin-top: 6px;">
       <h2>第六章　製品仕様・諸元</h2>
       <div class="card-panel" style="font-size: 9.5px; line-height: 1.6;">
         <div style="display: flex; justify-content: space-between;">
-          <span><strong>ウィンドウ設計：</strong>単一縦向き固定 (内部90°転回レイアウト)</span>
-          <span><strong>対応環境：</strong>Android 8.0以上 (minSdk 26, targetSdk 35)</span>
+          <span><strong>窓の設計：</strong>単一縦向き固定（内部で90°起こす配置）</span>
+          <span><strong>対応環境：</strong>Android 8.0 以上（minSdk 26 / target・compile 35）</span>
         </div>
         <div style="display: flex; justify-content: space-between; margin-top: 2px;">
-          <span><strong>描画エンジン：</strong>Jetpack Compose Canvas (リアルタイム木目・真鍮描画)</span>
-          <span><strong>履歴保持：</strong>Room SQLite 永続化データベース</span>
+          <span><strong>描画：</strong>Jetpack Compose Canvas（木目・真鍮・珠を実時間で描画）</span>
+          <span><strong>履歴保持：</strong>Room（SQLite）／設定は触覚の入切のみ保存</span>
         </div>
         <div style="margin-top: 3px; color: var(--color-hai); font-size: 8.8px;">
-          ※静謐な体験を保つため、ローマ字表記・音声読み上げ・桁数可変機能はあえて搭載していません。
+          ※版：versionName 1.0（versionCode 1）。表示は端末の地域設定によらず日本語のみ。静けさを保つため、ローマ字表記・音声読み上げ・珠の効果音・共有・桁数可変は搭載していません。明暗の装いは端末の設定に従います。
         </div>
       </div>
     </section>
