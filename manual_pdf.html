@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>そろばん禅 取扱説明書 (A4判)</title>
+  <style>
+    /* ==========================================================================
+       わびさび配色 & A4専用タイポグラフィ
+       ========================================================================== */
+    :root {
+      --color-sumi: #1a1918;
+      --color-sumi-light: #383531;
+      --color-hai: #65615a;
+      --color-shu: #9a3324;       /* 漆朱色 */
+      --color-kincha: #9e7b3e;    /* 真鍮金茶 */
+      --color-aizumi: #242e33;    /* 藍墨 */
+      --color-border: #d3ccbd;
+
+      --washi-base: #f5f1e7;
+
+      --font-serif: "Shippori Mincho", "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+      --font-sans: "BIZ UDPGothic", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* 画面表示時のデスク風背景 */
+    body {
+      background-color: #3b3a38;
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      line-height: 1.55;
+      color: var(--color-sumi);
+      -webkit-font-smoothing: antialiased;
+      padding: 20px 0;
+    }
+
+    /* ==========================================================================
+       プロシージャル和紙テクスチャ（楮繊維 ＋ 雲竜漉きムラ）
+       ========================================================================== */
+    .washi-paper {
+      background-color: var(--washi-base);
+      background-image:
+        radial-gradient(ellipse at 15% 15%, rgba(255, 255, 255, 0.7) 0%, transparent 60%),
+        radial-gradient(ellipse at 85% 85%, rgba(220, 210, 190, 0.6) 0%, transparent 60%),
+        /* 楮（こうぞ）の植物繊維・糸 */
+        url("data:image/svg+xml,%3Csvg width='300' height='300' viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.15 0 0 0 0 0.12 0 0 0 0 0.10 0 0 0 0.08 0'/%3E%3C/filter%3E%3C/defs%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3Cg stroke='%236e573e' stroke-linecap='round' fill='none'%3E%3Cpath d='M20,35 Q60,30 110,60 T160,50' stroke-width='1.1' opacity='0.35'/%3E%3Cpath d='M190,15 Q225,60 215,110' stroke-width='0.9' opacity='0.28'/%3E%3Cpath d='M280,45 Q260,95 285,140' stroke-width='1.2' opacity='0.32'/%3E%3Cpath d='M35,150 Q80,175 70,220' stroke-width='0.8' opacity='0.26'/%3E%3Cpath d='M140,200 Q180,185 230,215' stroke-width='1.3' opacity='0.36'/%3E%3Cpath d='M75,270 Q120,250 170,285' stroke-width='1.0' opacity='0.25'/%3E%3Cpath d='M250,240 Q285,280 270,315' stroke-width='1.1' opacity='0.30'/%3E%3Cpath d='M120,110 Q150,140 130,165' stroke-width='1.4' opacity='0.32'/%3E%3C/g%3E%3Cg fill='%236e573e'%3E%3Ccircle cx='45' cy='90' r='0.9' opacity='0.4'/%3E%3Ccircle cx='180' cy='160' r='1.1' opacity='0.45'/%3E%3Ccircle cx='290' cy='200' r='0.8' opacity='0.35'/%3E%3Ccircle cx='105' cy='240' r='1.0' opacity='0.4'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    /* ==========================================================================
+       A4用紙シート（210mm × 297mm 厳格制御）
+       ========================================================================== */
+    .a4-page {
+      width: 210mm;
+      height: 297mm;
+      margin: 0 auto 30px auto;
+      padding: 13mm 15mm;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* 透かし円相（背景） */
+    .a4-page::before {
+      content: "";
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 320px;
+      height: 320px;
+      opacity: 0.035;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 8 A42 42 0 1 0 88 54 A40 40 0 0 0 52 14' fill='none' stroke='%231f1e1c' stroke-width='9' stroke-linecap='round' stroke-dasharray='220 20'/%3E%3C/svg%3E");
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
+
+    /* ==========================================================================
+       共通ヘッダー・フッター
+       ========================================================================== */
+    .manual-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1.5px solid var(--color-sumi);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .brand-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .enso-svg {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+    }
+
+    .brand-title h1 {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      letter-spacing: 0.12em;
+      line-height: 1.1;
+      color: var(--color-sumi);
+    }
+
+    .brand-title .subtitle {
+      font-family: var(--font-serif);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--color-shu);
+    }
+
+    .header-meta {
+      font-size: 9.5px;
+      color: var(--color-hai);
+      text-align: right;
+      line-height: 1.4;
+    }
+
+    .page-footer {
+      border-top: 1px solid var(--color-border);
+      padding-top: 5px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--color-hai);
+    }
+
+    /* ==========================================================================
+       見出し & テーブル & パーツ
+       ========================================================================== */
+    h2 {
+      font-family: var(--font-serif);
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--color-sumi);
+      margin: 8px 0 5px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 3.5px;
+      height: 12px;
+      background: var(--color-shu);
+    }
+
+    p.lead-text {
+      font-size: 10.5px;
+      color: var(--color-sumi);
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .dense-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--color-border);
+    }
+
+    .dense-table th, .dense-table td {
+      border: 1px solid var(--color-border);
+      padding: 4px 7px;
+      text-align: left;
+    }
+
+    .dense-table th {
+      background: rgba(235, 229, 217, 0.85);
+      font-family: var(--font-serif);
+      font-weight: 600;
+      color: var(--color-sumi);
+    }
+
+    .dense-table td.pin-num {
+      text-align: center;
+      font-family: var(--font-serif);
+      font-weight: bold;
+      color: var(--color-shu);
+      font-size: 11.5px;
+      width: 26px;
+      background: rgba(253, 250, 245, 0.85);
+    }
+
+    .wabi-box {
+      border-left: 2.5px solid var(--color-kincha);
+      background: rgba(245, 240, 228, 0.7);
+      padding: 5px 10px;
+      margin: 6px 0;
+      font-size: 9.8px;
+      line-height: 1.5;
+    }
+
+    .wabi-box strong {
+      font-family: var(--font-serif);
+      color: #795d2c;
+    }
+
+    .key-tag {
+      display: inline-block;
+      padding: 0 4px;
+      font-size: 9px;
+      background: #faf8f5;
+      border: 1px solid #cfc7b8;
+      border-bottom-width: 2px;
+      border-radius: 2px;
+      font-family: monospace;
+    }
+
+    /* ==========================================================================
+       スクショ ＆ ピン配置（A4最適化レイアウト）
+       ========================================================================== */
+    .section-row {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      margin: 6px 0;
+    }
+
+    .shot-box {
+      position: relative;
+      display: inline-block;
+      border: 1px solid #1a1917;
+      background: #151413;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+      line-height: 0;
+    }
+
+    .shot-box img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* 1ページ目：縦型電卓スクショ（幅180pxに固定） */
+    .shot-calc { width: 175px; }
+    .shot-calc .mock { width: 175px; height: 320px; }
+
+    /* 2ページ目：横型そろばんスクショ（幅240pxに固定） */
+    .shot-soroban { width: 250px; }
+    .shot-soroban .mock { width: 250px; height: 145px; }
+
+    .mock {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #8c877d;
+      font-size: 10px;
+      text-align: center;
+      border: 1px dashed #3a3832;
+      line-height: 1.4;
+      padding: 8px;
+    }
+
+    /* 朱印ピンバッジ */
+    .pin {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--color-shu);
+      color: #fff;
+      font-family: var(--font-serif);
+      font-size: 10.5px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 1.5px #fff, 0 1.5px 4px rgba(0,0,0,0.5);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* 2カラムグリッド */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 5px 0;
+    }
+
+    .card-panel {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--color-border);
+      padding: 6px 10px;
+    }
+
+    .card-panel h3 {
+      font-family: var(--font-serif);
+      font-size: 11px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 2px;
+      color: var(--color-sumi);
+    }
+
+    .card-panel ul {
+      padding-left: 15px;
+      font-size: 9.5px;
+      line-height: 1.5;
+    }
+
+    /* 使い方 3x2 グリッド */
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin: 6px 0;
+    }
+
+    .guide-item {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--color-border);
+      padding: 6px 8px;
+    }
+
+    .guide-item strong {
+      font-size: 10px;
+      color: var(--color-sumi);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .guide-num {
+      display: inline-block;
+      background: var(--color-aizumi);
+      color: #fff;
+      font-size: 8.5px;
+      padding: 0 4px;
+      border-radius: 2px;
+      margin-right: 3px;
+    }
+
+    .guide-item p {
+      font-size: 9px;
+      color: var(--color-hai);
+      line-height: 1.35;
+    }
+
+    /* ==========================================================================
+       印刷専用設定（A4厳格2ページ出力）
+       ========================================================================== */
+    @page {
+      size: A4 portrait;
+      margin: 0; /* ブラウザ側の強制余白を0にして、.a4-pageのpaddingで制御 */
+    }
+
+    @media print {
+      body {
+        background: transparent !important;
+        padding: 0 !important;
+      }
+      .a4-page {
+        margin: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      /* 2ページ目以降の不要な余白を完全に防ぐ */
+      .a4-page:last-child {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==========================================================================
+     第1面（PAGE 1）：電卓モード・和風計算具
+     ========================================================================== -->
+<div class="a4-page washi-paper">
+  
+  <div>
+    <!-- ヘッダー -->
+    <header class="manual-header">
+      <div class="brand-area">
+        <svg class="enso-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M48 10 C24 11 8 28 8 52 C8 76 26 92 51 92 C74 92 92 75 92 50 C92 31 82 17 65 14" 
+                stroke="#1a1918" stroke-width="7.5" stroke-linecap="round" stroke-dasharray="270 20" />
+          <circle cx="68" cy="15" r="1.5" fill="#1a1918"/>
+        </svg>
+        <div class="brand-title">
+          <h1>そろばん禅 取扱説明書</h1>
+          <div class="subtitle">静謐なる電卓と本格和式そろばんの融合</div>
+        </div>
+      </div>
+      <div class="header-meta">
+        PI12A-15 CHIANG CHI NAM
+      </div>
+    </header>
+
+    <!-- 第一章：画面構想と転回 -->
+    <section>
+      <h2>第一章　画面構想と転回</h2>
+      <p class="lead-text">
+        単一の縦向きウィンドウ内で作動し、端末の構えを検知して内部描画を九十度反転配置します。
+      </p>
+      <table class="dense-table" style="margin-bottom: 6px;">
+        <thead>
+          <tr>
+            <th style="width: 22%;">構え</th>
+            <th style="width: 26%;">作動様式</th>
+            <th>動作特性と画面挙動</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>縦持ち</strong></td>
+            <td>静謐なる電卓</td>
+            <td>落ち着いた配色の十進計算機。漢数字読みと計算履歴録を表示。</td>
+          </tr>
+          <tr>
+            <td><strong>横持ち</strong></td>
+            <td>和式七桁そろばん</td>
+            <td>使い方の教え。音効、触感の設定ができます。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="wabi-box">
+        <strong>【手動切替】</strong> 電卓の「そろばん」刻印、そろばんレールの「電卓」刻印を押せば手動で切り替わります。
+      </div>
+    </section>
+
+    <!-- 第二章：電卓モード -->
+    <section>
+      <h2>第二章　電卓モード</h2>
+      <div class="section-row">
+        <!-- 電卓スクリーンショット配置枠 -->
+        <div class="shot-box shot-calc">
+          <!-- 実画像に差し替える場合は下の <img> を有効化してください -->
+          <!-- <img src="screenshots/calculator.png" alt="電卓画面"> -->
+          <div class="mock">
+            【電卓画面の捕獲画】<br>
+            <code>screenshots/calculator.png</code><br>
+            (幅 175px 推奨)
+          </div>
+          <div class="pin" style="top: 11%; left: 50%;">一</div>
+          <div class="pin" style="top: 24%; left: 50%;">二</div>
+          <div class="pin" style="top: 41%; left: 78%;">三</div>
+          <div class="pin" style="top: 62%; left: 50%;">四</div>
+          <div class="pin" style="top: 92%; left: 78%;">五</div>
+          <div class="pin" style="top: 92%; left: 50%;">六</div>
+        </div>
+
+        <!-- 機能解説テーブル -->
+        <div style="flex: 1;">
+          <table class="dense-table">
+            <thead>
+              <tr>
+                <th style="width: 9%;">印</th>
+                <th style="width: 32%;">部位名目</th>
+                <th>機能解説と運算仕様</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="pin-num">一</td>
+                <td><strong>算盤表示・漢数字</strong></td>
+                <td>三桁カンマ区切り表示。整数の結果には対応する<strong>漢数字の位取り読み</strong>が自動で寄り添います。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">二</td>
+                <td><strong>和の計算具切替</strong></td>
+                <td>「消費税（一割/ 八分）」および伝統の「尺貫法」度量衡換算を呼び出します。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">三</td>
+                <td><strong>払拭・符号反転</strong></td>
+                <td>
+                  <span class="key-tag">一桁</span> 現在入力を払う / <span class="key-tag">全払</span> すべて初期化。<br>
+                  <span class="key-tag">符号</span> で正負の符号を反転します。
+                </td>
+              </tr>
+              <tr>
+                <td class="pin-num">四</td>
+                <td><strong>四則演算鍵</strong></td>
+                <td>乗除優先（×÷先、＋−後）を厳格に計算。<span class="key-tag">＝</span>連続打鍵による反復計算に対応。内部パーサは括弧式も解釈。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">五</td>
+                <td><strong>そろばん転換</strong></td>
+                <td>タップで即座に横向きの和式そろばん画面へ遷移します。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">六</td>
+                <td><strong>計算履歴</strong></td>
+                <td>計算完了は最新順に自動保存されます。</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="wabi-box" style="margin-top: 6px;">
+            <strong>【space】</strong> space
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 第三章：和の計算具 -->
+    <section>
+      <h2>第三章　和の計算具（消費税と尺貫法）</h2>
+      <div class="grid-2">
+        <div class="card-panel">
+          <h3>💴 日本の消費税計算</h3>
+          <ul>
+            <li><strong>税率選択：</strong>一割（標準税率）および 八分（軽減税率）</li>
+            <li><strong>計算種別：</strong>税込加算・税抜逆算の双方向対応</li>
+            <li><strong>端数処理：</strong>日本の商習慣に則る<strong>「円未満切り捨て」</strong></li>
+            ※負数や無限大の入力は安全のため除外されます。
+          </ul>
+        </div>
+        <div class="card-panel">
+          <h3>📐 尺貫法の度量衡換算</h3>
+          <ul>
+            <li><strong>長さ：</strong>尺（しゃく）、寸（すん）、間（けん）</li>
+            <li><strong>広さ：</strong>坪（つぼ）、畳（じょう・概算基準値）</li>
+            <li><strong>容積：</strong>升（しょう）、合（ごう）</li>
+            <li><strong>重さ：</strong>貫（かん）、匁（もんめ）</li>
+            ※表示単位のいずれかを起点に入力し相互換算が可能。
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="page-footer">
+    <span>そろばん禅 操作手引き</span>
+    <span>第 一 頁 / 全 二 頁</span>
+  </footer>
+</div>
+
+
+<!-- ==========================================================================
+     第2面（PAGE 2）：和式そろばん・内蔵手引「使い方」
+     ========================================================================== -->
+<div class="a4-page washi-paper">
+
+  <div>
+    <!-- 第2面ミニヘッダー -->
+    <header class="manual-header">
+      <div class="brand-area">
+        <svg class="enso-svg" style="width:28px;height:28px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M48 10 C24 11 8 28 8 52 C8 76 26 92 51 92 C74 92 92 75 92 50 C92 31 82 17 65 14" stroke="#1a1918" stroke-width="8" stroke-linecap="round"/>
+        </svg>
+        <div class="brand-title">
+          <h1 style="font-size:16px;">そろばん禅 取扱説明書</h1>
+        </div>
+      </div>
+      <div class="header-meta">
+        和式七桁そろばん ＆ 内蔵手引
+      </div>
+    </header>
+
+    <!-- 第四章：そろばんモード -->
+    <section>
+      <h2>第四章　和式そろばん（七桁一五珠）</h2>
+      <p class="lead-text">
+        黒檀の木目、真鍮の桁棒と象嵌定位点、骨色の算台、黒漆調の双円錐珠を描画します。
+      </p>
+
+      <div class="section-row" style="align-items: center;">
+        <!-- 横向きそろばんスクリーンショット配置枠 -->
+        <div class="shot-box shot-soroban">
+          <!-- <img src="screenshots/soroban.png" alt="そろばん画面"> -->
+          <div class="mock">
+            【そろばん画面の捕獲画】<br>
+            <code>screenshots/soroban.png</code><br>
+            (幅 250px 推奨)
+          </div>
+          <div class="pin" style="top: 15%; left: 88%;">一</div>
+          <div class="pin" style="top: 24%; left: 45%;">二</div>
+          <div class="pin" style="top: 44%; left: 45%;">三</div>
+          <div class="pin" style="top: 72%; left: 45%;">四</div>
+          <div class="pin" style="top: 90%; left: 24%;">五</div>
+        </div>
+
+        <!-- そろばん説明テーブル -->
+        <div style="flex: 1;">
+          <table class="dense-table">
+            <thead>
+              <tr>
+                <th style="width: 10%;">印</th>
+                <th style="width: 28%;">部位・意匠</th>
+                <th>機能および運珠の手引き</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="pin-num">一</td>
+                <td><strong>操作レール</strong></td>
+                <td>電卓への帰還、ご破算（払う）、「使い方」、「設定」を格納。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">二</td>
+                <td><strong>天珠（五珠）</strong></td>
+                <td>一桁に一つ配された値「五」。梁へ寄せることで加算されます。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">三</td>
+                <td><strong>梁と定位点</strong></td>
+                <td>珠を留める境界棒。真鍮の定位点が千・百万の位を示します。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">四</td>
+                <td><strong>地珠（一珠×4）</strong></td>
+                <td>一桁に四つ。梁へ上げるごとに「一」加算。七桁固定（零〜九九九万）。</td>
+              </tr>
+              <tr>
+                <td class="pin-num">五</td>
+                <td><strong>数値・漢数字</strong></td>
+                <td>置かれた盤面の数値を算用数字および漢数字で常時同期表示。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="wabi-box">
+        <strong>【ご破算と端末を振る所作】</strong> 操作レールの払うボタンのほか、<strong>端末本体を一度軽く振る（Shake）</strong>ことでも盤面をご破算に清められます。誤操作時も直後に現れる<strong>「元に戻す」</strong>で直前の盤面へ瞬時に復帰します。
+      </div>
+    </section>
+
+    <!-- 第五章：使い方ガイド -->
+    <section style="margin-top: 10px;">
+      <h2>第五章　内蔵手引「使い方」六章</h2>
+      <p class="lead-text">
+        横向きの構えを維持したまま、五桁の見本盤面とステップ表示で学べるインラインオーバーレイです。
+      </p>
+
+      <div class="guide-grid">
+        <div class="guide-item">
+          <strong><span class="guide-num">一</span>読み方</strong>
+          <p>天珠・地珠の数え方と真鍮定位点が示す位取りを弁える。</p>
+        </div>
+        <div class="guide-item">
+          <strong><span class="guide-num">二</span>数を置く</strong>
+          <p>一から九までの数を迷いなく盤面へ置く運珠の基本作法。</p>
+        </div>
+        <div class="guide-item">
+          <strong><span class="guide-num">三</span>足す引く</strong>
+          <p>五珠の繰り入れを伴わない素直な加算と減算の指運び。</p>
+        </div>
+        <div class="guide-item">
+          <strong><span class="guide-num">四</span>五をつかう</strong>
+          <p>五の合成分解（五珠を繰り入れ、不要な一珠を払う手並み）。</p>
+        </div>
+        <div class="guide-item">
+          <strong><span class="guide-num">五</span>十をつかう</strong>
+          <p>十の補数を用いて隣の桁へと位を渡す繰り上がり・下がり。</p>
+        </div>
+        <div class="guide-item">
+          <strong><span class="guide-num">六</span>かけ算・わり算</strong>
+          <p>九九を用いた積の置き方、商を立てて引く割算の道筋。</p>
+        </div>
+      </div>
+      <p style="font-size: 9px; color: var(--color-hai); margin-top: 3px;">
+        ※各章は「次へ」「戻る」で連続して受講でき、最終章で「もう一度」に変化します。「閉じる」で即座に計算へ復帰できます。
+      </p>
+    </section>
+
+    <!-- 補足・仕様諸元 -->
+    <section style="margin-top: 10px;">
+      <h2>第六章　製品仕様・諸元</h2>
+      <div class="card-panel" style="font-size: 9.5px; line-height: 1.6;">
+        <div style="display: flex; justify-content: space-between;">
+          <span><strong>ウィンドウ設計：</strong>単一縦向き固定 (内部90°転回レイアウト)</span>
+          <span><strong>対応環境：</strong>Android 8.0以上 (minSdk 26, targetSdk 35)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 2px;">
+          <span><strong>描画エンジン：</strong>Jetpack Compose Canvas (リアルタイム木目・真鍮描画)</span>
+          <span><strong>履歴保持：</strong>Room SQLite 永続化データベース</span>
+        </div>
+        <div style="margin-top: 3px; color: var(--color-hai); font-size: 8.8px;">
+          ※静謐な体験を保つため、ローマ字表記・音声読み上げ・桁数可変機能はあえて搭載していません。
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="page-footer">
+    <span>そろばん禅 操作手引き</span>
+    <span>第 二 頁 / 全 二 頁（完）</span>
+  </footer>
+</div>
+
+</body>
+</html>
