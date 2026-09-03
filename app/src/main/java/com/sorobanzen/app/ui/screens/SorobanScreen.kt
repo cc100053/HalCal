@@ -2,10 +2,8 @@ package com.sorobanzen.app.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -23,10 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -34,7 +29,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,7 +43,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
@@ -63,7 +56,6 @@ import com.sorobanzen.app.R
 import com.sorobanzen.app.domain.SorobanEngine
 import com.sorobanzen.app.ui.components.ShakeResetListener
 import com.sorobanzen.app.ui.components.SorobanCanvas
-import com.sorobanzen.app.ui.components.SorobanGuidePreview
 import com.sorobanzen.app.ui.components.sorobanBoardAspect
 import com.sorobanzen.app.ui.components.ZenBackground
 import com.sorobanzen.app.ui.components.ZenMark
@@ -314,152 +306,11 @@ fun SorobanScreen(
             )
 
             if (showGuide) {
-                SorobanGuideOverlay(onClose = { showGuide = false })
+                UsageGuideSheet(onClose = { showGuide = false })
             }
         }
     }
 
-}
-
-/**
- * The guide lives inside the soroban's own frame rather than in a dialog window. A dialog gets a
- * window of its own, and that window would come up in the app's portrait orientation instead of
- * the reader's.
- */
-@Composable
-private fun BoxScope.SorobanGuideOverlay(onClose: () -> Unit) {
-    BackHandler(onBack = onClose)
-    Box(
-        modifier = Modifier
-            .matchParentSize()
-            .background(Color.Black.copy(alpha = 0.42f))
-            .pointerInput(Unit) { detectTapGestures { onClose() } },
-        contentAlignment = Alignment.Center
-    ) {
-        Surface(
-            modifier = Modifier
-                .padding(horizontal = 20.dp, vertical = 20.dp)
-                .widthIn(max = 560.dp)
-                .fillMaxWidth()
-                // Swallows taps so a press on the card does not read as a press outside it.
-                .pointerInput(Unit) { detectTapGestures { } },
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = stringResource(id = R.string.soroban_guide_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                Row(
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(
-                        modifier = Modifier.width(116.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        SorobanGuidePreview(
-                            accessibilityDescription = stringResource(
-                                id = R.string.soroban_guide_preview_description
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(184.dp)
-                                .clip(MaterialTheme.shapes.medium)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = stringResource(id = R.string.soroban_guide_example),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        SorobanGuideRow(
-                            index = 1,
-                            title = stringResource(id = R.string.soroban_guide_heaven_title),
-                            description = stringResource(
-                                id = R.string.soroban_guide_heaven_description
-                            )
-                        )
-                        SorobanGuideRow(
-                            index = 2,
-                            title = stringResource(id = R.string.soroban_guide_earth_title),
-                            description = stringResource(
-                                id = R.string.soroban_guide_earth_description
-                            )
-                        )
-                        SorobanGuideRow(
-                            index = 3,
-                            title = stringResource(id = R.string.soroban_guide_dots_title),
-                            description = stringResource(
-                                id = R.string.soroban_guide_dots_description
-                            )
-                        )
-                        SorobanGuideRow(
-                            index = 4,
-                            title = stringResource(id = R.string.soroban_guide_value_title),
-                            description = stringResource(
-                                id = R.string.soroban_guide_value_description
-                            )
-                        )
-                    }
-                }
-                TextButton(
-                    onClick = onClose,
-                    modifier = Modifier.align(Alignment.End)
-                ) {
-                    Text(stringResource(id = R.string.close))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SorobanGuideRow(
-    index: Int,
-    title: String,
-    description: String
-) {
-    Row(
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(9.dp)
-    ) {
-        Surface(
-            modifier = Modifier.size(26.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            contentColor = MaterialTheme.colorScheme.primary
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(text = index.toString(), style = MaterialTheme.typography.labelMedium)
-            }
-        }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
 }
 
 /** Plain-text rail entry: no chrome, only the word and a comfortable touch target. */

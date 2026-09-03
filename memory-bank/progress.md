@@ -8,7 +8,7 @@ Last reviewed: 2026-09-02
 | --- | --- | --- |
 | Portrait calculator | Implemented | Four operations, decimals, clear controls, precedence, formatted results |
 | Calculation history | Implemented | Room-backed newest-first list; normal and tax entries; load and clear actions |
-| Landscape soroban | Implemented | Fixed 7 rods, tap/drag, 黒檀と骨 ebony/bone/brass/lacquer Canvas materials on the handoff's own geometry, seeded ebony grain on the frame and beam, overshoot bead travel that snaps under reduced motion, quiet unboxed control rail, visual reading guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
+| Landscape soroban | Implemented | Fixed 7 rods, tap/drag, 黒檀と骨 ebony/bone/brass/lacquer Canvas materials on the handoff's own geometry, seeded ebony grain on the frame and beam, overshoot bead travel that snaps under reduced motion, quiet unboxed control rail, chaptered 使い方 guide, sound/haptics, clear undo, and adjustable per-rod accessibility semantics |
 | Japanese readings | Implemented | Kanji through `京`; core case unit-tested; Romaji removed from product and domain |
 | Japanese TTS | Removed | Voice readout, its preference, and the `TextToSpeech` owner were deleted from the current working tree |
 | Mode switching | Implemented | Window pinned to portrait; the content turns instead. Sensor and そろばん/電卓 buttons write one mode state. The incoming screen fades in over a fully opaque outgoing one, so there is neither a platform rotation snapshot nor a bleached frame |

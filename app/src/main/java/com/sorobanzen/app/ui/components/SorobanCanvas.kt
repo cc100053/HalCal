@@ -825,28 +825,121 @@ internal fun earthDragTarget(
     }
 }
 
+/*
+ * 使い方 — the guide's own instrument, written in the handoff's 308 x 228 space the way the full
+ * board is written in its 768 x 352 one. Five rods, not the app's seven: a lesson needs enough
+ * places to show a carry and no more. Read-only; the stepper moves the beads, a finger does not.
+ */
+private const val MINI_HEIGHT = 228f
+private const val MINI_RADIUS = 7f
+private const val MINI_FIELD_INSET_X = 34f
+private const val MINI_FIELD_INSET_Y = 26f
+private const val MINI_FIELD_WIDTH = 240f
+private const val MINI_FIELD_HEIGHT = 176f
+private const val MINI_BEAM_TOP = 62f
+private const val MINI_BEAM_HEIGHT = 12f
+private const val MINI_BEAM_SHADOW = 8f
+private const val MINI_FIELD_RECESS = 8f
+private const val MINI_BEAD_WIDTH = 34f
+private const val MINI_BEAD_HEIGHT = 15f
+private const val MINI_BEAD_PITCH = 18f
+private const val MINI_BEAD_MARGIN = 5f
+private const val MINI_MARKER_SIZE = 6f
+
+/** Aspect ratio of the guide's board, and the rod count its lessons are written for. */
+const val MINI_BOARD_ASPECT = 308f / MINI_HEIGHT
+const val MINI_ROD_COUNT = 5
+
+/** Rod centre in field space: the outer bead columns keep a 6-unit margin, the rest is even. */
+private fun miniRodCenterX(index: Int): Float =
+    MINI_BEAD_WIDTH / 2f + 6f +
+        index * ((MINI_FIELD_WIDTH - MINI_BEAD_WIDTH - 12f) / (MINI_ROD_COUNT - 1))
+
+/** Slower and softer than the instrument's own travel, so a learner can follow the movement. */
+private val MiniBeadEasing = CubicBezierEasing(0.2f, 1.42f, 0.34f, 1f)
+private const val MINI_BEAD_TRAVEL_MILLIS = 460
+
+private val MiniHighlight = Color(0xFFC4A05A)
+
 @Composable
-fun SorobanGuidePreview(
+fun SorobanMiniBoard(
+    rods: IntArray,
+    highlightRod: Int?,
     accessibilityDescription: String,
     modifier: Modifier = Modifier
 ) {
-    Canvas(
-        modifier = modifier.semantics {
-            contentDescription = accessibilityDescription
-        }
-    ) {
-        // A single rod, upright, in the same materials as the board itself.
-        val unit = size.width / 116f
-        val frame = 5f * unit
-        val fieldTop = frame
-        val fieldBottom = size.height - frame
-        val centerX = size.width / 2f
-        val beamHeight = 9f * unit
-        val beamTop = fieldTop + (fieldBottom - fieldTop) * 0.28f
-        val beadWidth = size.width * 0.58f
-        val beadHeight = beadWidth * BEAD_HEIGHT / BEAD_WIDTH
-        val beadGap = beadHeight * BEAD_GAP / BEAD_HEIGHT
+    val context = LocalContext.current
+    val reduceMotion = remember(context) {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f
+        ) == 0f
+    }
+    val beadSpec = remember(reduceMotion) {
+        if (reduceMotion) snap() else tween<Float>(MINI_BEAD_TRAVEL_MILLIS, easing = MiniBeadEasing)
+    }
+    val washSpec = remember(reduceMotion) {
+        if (reduceMotion) snap() else tween<Float>(300)
+    }
 
+    val heavenAnimatables = remember { List(MINI_ROD_COUNT) { Animatable(0f) } }
+    val earthAnimatables = remember { List(MINI_ROD_COUNT) { List(4) { Animatable(0f) } } }
+    // The wash slides between rods, so it keeps its last rod while it fades out.
+    val washX = remember { Animatable(miniRodCenterX(highlightRod ?: 0)) }
+    val washAlpha = remember { Animatable(if (highlightRod == null) 0f else 1f) }
+
+    LaunchedEffect(rods, beadSpec) {
+        for (index in 0 until MINI_ROD_COUNT) {
+            val rodValue = rods.getOrElse(index) { 0 }
+            launch {
+                heavenAnimatables[index].animateTo(if (rodValue >= 5) 1f else 0f, beadSpec)
+            }
+            repeat(4) { beadIndex ->
+                launch {
+                    earthAnimatables[index][beadIndex]
+                        .animateTo(if (beadIndex < rodValue % 5) 1f else 0f, beadSpec)
+                }
+            }
+        }
+    }
+    LaunchedEffect(highlightRod, washSpec) {
+        if (highlightRod != null) {
+            launch { washX.animateTo(miniRodCenterX(highlightRod), washSpec) }
+        }
+        washAlpha.animateTo(if (highlightRod == null) 0f else 1f, washSpec)
+    }
+
+    Canvas(
+        modifier = modifier.semantics { contentDescription = accessibilityDescription }
+    ) {
+        val unit = size.height / MINI_HEIGHT
+
+        val fieldLeft = MINI_FIELD_INSET_X * unit
+        val fieldTop = MINI_FIELD_INSET_Y * unit
+        val fieldWidth = MINI_FIELD_WIDTH * unit
+        val fieldHeight = MINI_FIELD_HEIGHT * unit
+        val fieldRight = fieldLeft + fieldWidth
+        val fieldBottom = fieldTop + fieldHeight
+        val beamTopY = fieldTop + MINI_BEAM_TOP * unit
+        val beamBottomY = beamTopY + MINI_BEAM_HEIGHT * unit
+        val beadWidth = MINI_BEAD_WIDTH * unit
+        val beadHeight = MINI_BEAD_HEIGHT * unit
+
+        fun rodX(index: Int) = fieldLeft + miniRodCenterX(index) * unit
+        // Bead tops in field space, from the handoff; drawn from their centres.
+        fun centreOf(top: Float) = fieldTop + (top + MINI_BEAD_HEIGHT / 2f) * unit
+        val heavenInactiveY = centreOf(MINI_BEAD_MARGIN)
+        val heavenActiveY = centreOf(MINI_BEAM_TOP - MINI_BEAD_HEIGHT - MINI_BEAD_MARGIN)
+        fun earthActiveY(beadIndex: Int) = centreOf(
+            MINI_BEAM_TOP + MINI_BEAM_HEIGHT + MINI_BEAD_MARGIN + beadIndex * MINI_BEAD_PITCH
+        )
+        fun earthInactiveY(beadIndex: Int) = centreOf(
+            MINI_FIELD_HEIGHT - MINI_BEAD_MARGIN - MINI_BEAD_HEIGHT -
+                (3 - beadIndex) * MINI_BEAD_PITCH
+        )
+
+        // ── Ebony frame ────────────────────────────────────────────────────────────────────
         val (boardStart, boardEnd) = angledGradient(150f, size)
         drawRoundRect(
             brush = Brush.linearGradient(
@@ -854,72 +947,153 @@ fun SorobanGuidePreview(
                 start = boardStart,
                 end = boardEnd
             ),
-            cornerRadius = CornerRadius(4f * unit)
+            cornerRadius = CornerRadius(MINI_RADIUS * unit)
         )
         drawRoundRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(BoneLight, BoneDark),
-                startY = fieldTop,
-                endY = fieldBottom
-            ),
-            topLeft = Offset(frame, fieldTop),
-            size = Size(size.width - frame * 2f, fieldBottom - fieldTop),
-            cornerRadius = CornerRadius(unit)
+            color = Color.Black.copy(alpha = 0.5f),
+            cornerRadius = CornerRadius(MINI_RADIUS * unit),
+            style = Stroke(width = unit)
         )
-        drawRect(
-            brush = Brush.horizontalGradient(
-                colorStops = RodStops,
-                startX = centerX - unit,
-                endX = centerX + unit
-            ),
-            topLeft = Offset(centerX - unit, fieldTop),
-            size = Size(2f * unit, fieldBottom - fieldTop)
-        )
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(BeamLight, BeamDark),
-                startY = beamTop,
-                endY = beamTop + beamHeight
-            ),
-            topLeft = Offset(frame, beamTop),
-            size = Size(size.width - frame * 2f, beamHeight)
-        )
-        val markerReach = beamHeight * 0.45f
-        drawPath(
-            path = Path().apply {
-                val cy = beamTop + beamHeight / 2f
-                moveTo(centerX, cy - markerReach)
-                lineTo(centerX + markerReach, cy)
-                lineTo(centerX, cy + markerReach)
-                lineTo(centerX - markerReach, cy)
-                close()
-            },
-            brush = Brush.linearGradient(listOf(BrassMarkerLight, BrassMarkerDark))
+        drawLine(
+            color = BrassSheen.copy(alpha = 0.26f),
+            start = Offset(MINI_RADIUS * unit, unit * 0.5f),
+            end = Offset(size.width - MINI_RADIUS * unit, unit * 0.5f),
+            strokeWidth = unit
         )
 
-        drawLacquerBead(
-            centerX = centerX,
-            centerY = beamTop - beadHeight / 2f - 3f * unit,
-            beadWidth = beadWidth,
-            beadHeight = beadHeight,
-            unit = unit
-        )
-        repeat(4) { beadIndex ->
-            val active = beadIndex < 2
-            val centerY = if (active) {
-                beamTop + beamHeight + beadHeight / 2f + 3f * unit +
-                    beadIndex * (beadHeight + beadGap)
-            } else {
-                fieldBottom - beadHeight / 2f - 3f * unit -
-                    (3 - beadIndex) * (beadHeight + beadGap)
-            }
-            drawLacquerBead(
-                centerX = centerX,
-                centerY = centerY,
-                beadWidth = beadWidth,
-                beadHeight = beadHeight,
-                unit = unit
+        // ── Bone reckoning field ───────────────────────────────────────────────────────────
+        clipRect(fieldLeft, fieldTop, fieldRight, fieldBottom) {
+            drawRoundRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BoneLight, BoneDark),
+                    startY = fieldTop,
+                    endY = fieldBottom
+                ),
+                topLeft = Offset(fieldLeft, fieldTop),
+                size = Size(fieldWidth, fieldHeight),
+                cornerRadius = CornerRadius(FIELD_RADIUS * unit)
             )
+
+            // ── Focus wash, behind everything on the field ─────────────────────────────────
+            if (washAlpha.value > 0f) {
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MiniHighlight.copy(alpha = 0.30f * washAlpha.value),
+                            MiniHighlight.copy(alpha = 0.14f * washAlpha.value)
+                        ),
+                        startY = fieldTop,
+                        endY = fieldBottom
+                    ),
+                    topLeft = Offset(
+                        fieldLeft + (washX.value - MINI_BEAD_WIDTH / 2f) * unit,
+                        fieldTop
+                    ),
+                    size = Size(beadWidth, fieldHeight)
+                )
+            }
+
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(FieldRecessColor.copy(alpha = 0.32f), Color.Transparent),
+                    startY = fieldTop,
+                    endY = fieldTop + MINI_FIELD_RECESS * unit
+                ),
+                topLeft = Offset(fieldLeft, fieldTop),
+                size = Size(fieldWidth, MINI_FIELD_RECESS * unit)
+            )
+            drawLine(
+                color = Color.White.copy(alpha = 0.6f),
+                start = Offset(fieldLeft, fieldBottom - unit * 0.5f),
+                end = Offset(fieldRight, fieldBottom - unit * 0.5f),
+                strokeWidth = unit
+            )
+
+            // ── Brass rods ─────────────────────────────────────────────────────────────────
+            val rodWidth = ROD_WIDTH * unit
+            repeat(MINI_ROD_COUNT) { index ->
+                val x = rodX(index)
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        colorStops = RodStops,
+                        startX = x - rodWidth / 2f,
+                        endX = x + rodWidth / 2f
+                    ),
+                    topLeft = Offset(x - rodWidth / 2f, fieldTop),
+                    size = Size(rodWidth, fieldHeight)
+                )
+            }
+
+            // ── Reckoning beam ─────────────────────────────────────────────────────────────
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BeamShadowColor.copy(alpha = 0.38f), Color.Transparent),
+                    startY = beamBottomY,
+                    endY = beamBottomY + MINI_BEAM_SHADOW * unit
+                ),
+                topLeft = Offset(fieldLeft, beamBottomY),
+                size = Size(fieldWidth, MINI_BEAM_SHADOW * unit)
+            )
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(BeamLight, BeamDark),
+                    startY = beamTopY,
+                    endY = beamBottomY
+                ),
+                topLeft = Offset(fieldLeft, beamTopY),
+                size = Size(fieldWidth, MINI_BEAM_HEIGHT * unit)
+            )
+            drawLine(
+                color = Brass.copy(alpha = 0.4f),
+                start = Offset(fieldLeft, beamTopY + unit * 0.5f),
+                end = Offset(fieldRight, beamTopY + unit * 0.5f),
+                strokeWidth = unit
+            )
+
+            // ── Brass unit markers, on the app's every-fourth-rod grouping ─────────────────
+            val markerReach = MINI_MARKER_SIZE * unit * 0.7071f
+            repeat(MINI_ROD_COUNT) { index ->
+                if ((MINI_ROD_COUNT - 1 - index) % 4 == 3) {
+                    val centre = Offset(rodX(index), beamTopY + MINI_BEAM_HEIGHT * unit / 2f)
+                    drawPath(
+                        path = Path().apply {
+                            moveTo(centre.x, centre.y - markerReach)
+                            lineTo(centre.x + markerReach, centre.y)
+                            lineTo(centre.x, centre.y + markerReach)
+                            lineTo(centre.x - markerReach, centre.y)
+                            close()
+                        },
+                        brush = Brush.linearGradient(
+                            colors = listOf(BrassMarkerLight, BrassMarkerDark)
+                        )
+                    )
+                }
+            }
+
+            // ── Black-lacquer beads ────────────────────────────────────────────────────────
+            repeat(MINI_ROD_COUNT) { index ->
+                val x = rodX(index)
+                val heavenFactor = heavenAnimatables[index].value
+                drawLacquerBead(
+                    centerX = x,
+                    centerY = heavenInactiveY + (heavenActiveY - heavenInactiveY) * heavenFactor,
+                    beadWidth = beadWidth,
+                    beadHeight = beadHeight,
+                    unit = unit
+                )
+                repeat(4) { beadIndex ->
+                    val factor = earthAnimatables[index][beadIndex].value
+                    val activeY = earthActiveY(beadIndex)
+                    val inactiveY = earthInactiveY(beadIndex)
+                    drawLacquerBead(
+                        centerX = x,
+                        centerY = inactiveY + (activeY - inactiveY) * factor,
+                        beadWidth = beadWidth,
+                        beadHeight = beadHeight,
+                        unit = unit
+                    )
+                }
+            }
         }
     }
 }

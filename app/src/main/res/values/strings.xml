@@ -75,17 +75,69 @@
     <string name="soroban_interaction_hint">珠をタップ／ドラッグして動かす</string>
     <string name="rod_value">桁の重み：10^%1$d（%2$s）</string>
     <string name="guide">使い方</string>
-    <string name="soroban_guide_title">そろばんの読み方</string>
+    <!-- 使い方 — 章立ての手引き。読み方の四点は従来の文面をそのまま使う。 -->
     <string name="soroban_guide_heaven_title">五玉（天珠）</string>
     <string name="soroban_guide_heaven_description">梁へ下げると「5」を表します。</string>
     <string name="soroban_guide_earth_title">一玉（地珠）</string>
     <string name="soroban_guide_earth_description">梁へ上げた珠が、それぞれ「1」を表します。</string>
     <string name="soroban_guide_dots_title">定位点</string>
-    <string name="soroban_guide_dots_description">桁を四つずつまとめる目印です。</string>
+    <string name="soroban_guide_dots_description">桁を四つずつまとめる目印です。読み始める位置の手がかりになります。</string>
     <string name="soroban_guide_value_title">桁の値</string>
     <string name="soroban_guide_value_description">梁へ寄せた珠を合計し、0から9で読みます。</string>
-    <string name="soroban_guide_example">7 = 5 + 2</string>
-    <string name="soroban_guide_preview_description">7を表した一桁のそろばん</string>
+    <string name="guide_board_description">そろばんの図。この手順の値は%1$s です。</string>
+    <string name="guide_step_counter">%1$d / %2$d</string>
+    <string name="guide_back">戻る</string>
+    <string name="guide_next">次へ</string>
+    <string name="guide_restart">もう一度</string>
+    <string name="guide_step_select">%1$d 番目の手順へ</string>
+
+    <string name="guide_chapter_read">読み方</string>
+    <string name="guide_chapter_read_latin">Reading</string>
+    <string name="guide_chapter_add">たし算</string>
+    <string name="guide_chapter_add_latin">Addition</string>
+    <string name="guide_chapter_sub">ひき算</string>
+    <string name="guide_chapter_sub_latin">Subtraction</string>
+    <string name="guide_chapter_mul">かけ算</string>
+    <string name="guide_chapter_mul_latin">Multiplication</string>
+    <string name="guide_chapter_div">わり算</string>
+    <string name="guide_chapter_div_latin">Division</string>
+
+    <string name="guide_add_1_title">3 を置く</string>
+    <string name="guide_add_1_body">一玉を三つ、梁へ上げます。</string>
+    <string name="guide_add_2_title">4 を足す</string>
+    <string name="guide_add_2_body">一玉が足りません。五玉を下げて 5 を入れます。</string>
+    <string name="guide_add_2_note">+4 は +5 −1</string>
+    <string name="guide_add_3_title">1 を戻す</string>
+    <string name="guide_add_3_body">入れすぎた 1 を払います。</string>
+    <string name="guide_add_4_title">8 に 7 を足す</string>
+    <string name="guide_add_4_body">この桁では足りません。十の位へ 1 を繰り上げます。</string>
+    <string name="guide_add_4_note">繰り上がり — +7 は +10 −3</string>
+    <string name="guide_add_5_title">3 を払う</string>
+    <string name="guide_add_5_body">繰り上げた分から 3 を戻して読み取ります。</string>
+
+    <string name="guide_sub_1_title">12 を置く</string>
+    <string name="guide_sub_1_body">十の位に 1、一の位に 2。</string>
+    <string name="guide_sub_2_title">5 を引く</string>
+    <string name="guide_sub_2_body">一の位は 2 しかありません。上の桁から 1 を借ります。</string>
+    <string name="guide_sub_2_note">繰り下がり</string>
+    <string name="guide_sub_3_title">差を足し戻す</string>
+    <string name="guide_sub_3_body">借りた 10 から 5 を引いた 5 を、この桁へ足します。</string>
+
+    <string name="guide_mul_1_title">23 を置く</string>
+    <string name="guide_mul_1_body">掛けられる数を右に寄せて置きます。掛ける数 4 は頭に置きます。</string>
+    <string name="guide_mul_2_title">3 × 4 = 12</string>
+    <string name="guide_mul_2_body">一の位から。部分積を最下位へ置きます。</string>
+    <string name="guide_mul_2_note">部分積</string>
+    <string name="guide_mul_3_title">2 × 4 = 8</string>
+    <string name="guide_mul_3_body">一桁左へずらして加えます。</string>
+
+    <string name="guide_div_1_title">84 を置く</string>
+    <string name="guide_div_1_body">割られる数を右に、割る数 4 を頭に置きます。</string>
+    <string name="guide_div_2_title">8 ÷ 4 = 2</string>
+    <string name="guide_div_2_body">商を二桁左に立て、割った分を払います。</string>
+    <string name="guide_div_2_note">商</string>
+    <string name="guide_div_3_title">4 ÷ 4 = 1</string>
+    <string name="guide_div_3_body">残りを割り、商の隣に立てます。</string>
     <string name="soroban_canvas_description">そろばん。現在の値は%1$sです。珠をタップまたはドラッグして動かします。</string>
     <string name="soroban_rod_accessibility">右から%1$d桁目。現在の値は%2$dです。</string>
     <string name="soroban_rod_state">値%1$d</string>
