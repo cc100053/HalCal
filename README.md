@@ -1,143 +1,106 @@
 # そろばん禅
 
-そろばん禅 is a premium, beautifully crafted, wabi-sabi inspired Android application that serves as a modern minimalist calculator in portrait mode and a fully interactive, realistic Japanese abacus in landscape mode. The product interface is intentionally Japanese-only across every device locale. The application includes seamless orientation transitions, standard calculations, consumption tax rates, traditional Japanese unit conversions, and an educational mental math practice mode.
+そろばん禅 (`com.sorobanzen.app`) is a Japanese-only Android app that combines a quiet portrait calculator with an interactive Japanese soroban. The app uses a single portrait window: when the phone is held sideways, the soroban is measured and drawn turned inside that window.
 
----
+Current build: `versionName 1.0`, `versionCode 1`, minimum API 26, compile/target API 35.
 
-## 🌸 Core Concept & Design System
-The design of **Soroban Zen** is inspired by *wabi-sabi* (traditional Japanese minimalist aesthetic focusing on natural asymmetry, simplicity, and warmth):
-- **Color Palette**: Warm washi (`#F4F0E7`), sumi ink (`#25231F`), moss (`#586A55`), aizome indigo (`#3E5363`), and a restrained sakura accent (`#A9676D`), with a dedicated charcoal-paper dark theme.
-- **Typography**: System serif for expressive headings and system sans-serif for controls, body copy, and precise numeric displays, preserving reliable Japanese glyph coverage without bundled font weight.
-- **Crafted Surfaces**: A deterministic Compose-drawn washi texture, vector ensō mark, softly raised cards, and a 黒檀と骨 soroban — ebony-lacquer frame, brass inlay and rods, bone reckoning field, black-lacquer bi-conical beads — provide depth without raster UI assets.
-- **Micro-interactions**: Tactile feedback, bead click sounds, spring-based bead motion, deliberate destructive-action confirmation, and short fade transitions reinforce state without visual noise.
-- **Responsive Layout**: System safe areas, 48dp-class touch targets, capped tablet keypad width, scrollable tool sheets, and responsive landscape controls keep the interface composed across phones and tablets.
+## Product behavior
 
----
+### Mode switching
 
-## 🧮 Detailed Features
+- Upright shows the calculator; sideways shows the soroban.
+- The activity window stays pinned to portrait. `OrientationEventListener` changes the content mode, and `MainActivity.TurnedFrame` rotates and lays out sideways content with swapped width/height constraints.
+- The calculator's `そろばん` button and soroban's `電卓` button change the same mode state directly. A button selection remains until the phone is physically turned again.
+- Mode changes cross-fade inside the app. Soroban mode hides the system bars; swipe from an edge to reveal them temporarily.
 
-### 1. Interactive Soroban Mode (Landscape)
-- **Traditional Layout**: Modern standard 1-5 abacus (1 heaven bead + 4 earth beads per rod).
-- **Fixed 7-Rod Frame**: A seven-rod board with traditional alignment indicators/dots (dots on every 4th rod representing thousands, millions, etc.), sized to stay legible on a phone.
-- **Quiet Control Rail**: A slim, unboxed landscape rail keeps the value, Japanese reading, and essential actions visible without competing with the instrument.
-- **Satisfying Interaction**: Custom canvas rendering of bi-conical beads (*soroban-dama*) with drag-and-slide gestures, haptic pops, and spring-snapping physics.
-- **Real-Time Reading**: Displays the numerical value alongside its Japanese Kanji reading (e.g., `十二万三千四百五十六`).
-- **Shake to Reset**: Integrates Android's accelerometer; shaking or using the clear control resets the frame with an immediate undo action.
+### Calculator and history
 
-### 2. Normal Calculator Mode (Portrait)
-- Quiet-luxury display hierarchy with a centered ensō wordmark and warm, rounded tactile keys.
-- Full support for basic operations (Addition, Subtraction, Multiplication, Division) and precedence math parsing.
-- Access to localized, scrollable bottom sheets for Japanese tools.
-- Room database calculation history with scrollable records, instant reload, and clear-history confirmation.
-- Formatted reading of the entry line: parser symbols rendered as `×` and `÷`, spaced operators, and thousands grouping, applied for display only.
+- Supports decimal `+`, `−`, `×`, and `÷` calculations with normal multiplication/division precedence.
+- The parser also understands parentheses and unary signs, although the keypad does not expose parentheses.
+- `C`, `AC`, sign toggle, one decimal point per operand, repeat-equals behavior, and readable input limits are supported.
+- The display formats `×`/`÷`, spaces binary operators, groups integer digits, and shows Japanese Kanji readings for whole-number results.
+- Successful calculations and tax actions are stored newest-first in Room history. Tapping a row loads its result; clearing history requires confirmation. Soroban changes are not saved to history.
 
-### 2b. Switching Modes
-Turning the phone is the primary switch: upright is the calculator, sideways is the soroban. For a phone that is being kept one way up, the calculator's **そろばん** button and the soroban's **電卓** button do the same thing directly, and a button's choice stands until the phone is next turned.
+### Soroban
 
-The window itself never rotates. It stays in portrait for the life of the app and the soroban is drawn turned inside it, laid out with the screen's width and height swapped. Because the system is never asked to rotate, there is no rotation animation and no snapshot of the outgoing screen to show through: the two modes simply cross-fade in one window. Soroban mode also runs without the system bars, which in a pinned window would sit along a vertical edge; swipe from the edge to bring them back.
+- Fixed seven-rod 1:5 layout: one heaven bead worth five and four earth beads worth one each.
+- Each rod is one decimal digit (`0..9`), ordered from most-significant on the left to least-significant on the right.
+- Tap or drag beads on the procedural Compose Canvas. Alignment dots, ebony grain, brass rods/inlay, bone reckoning field, and black-lacquer bi-conical beads are drawn at runtime.
+- The rail provides `電卓`, `そろばんを払う`, `使い方`, and `設定`. Clear and shake-to-reset expose a short `元に戻す` action.
+- The value is shown with comma grouping and a Japanese Kanji reading. Romaji, text-to-speech, sharing, and adjustable rod counts are not part of the current app.
 
-### 3. Traditional Japanese Tools
-- **Consumption Tax Calculator**: Handles standard (10%) and reduced (8% for food/essentials) tax rates with detailed tax breakdowns.
-- **Traditional Unit Converter**: Length (shaku, sun, ken), area (tsubo, jo), volume (sho, go), and weight (kan, momme). Any unit in a category can be tapped to become the one you type in.
-- **Practice / Training Mode**: A 60-second mental-math session with immediate answer focus, guarded submissions, and a persistent score/accuracy summary when the session ends.
+### 使い方 guide
 
----
+The sideways rail opens an inline guide overlay, so it remains readable inside the turned frame. It is one stepped lesson with a read-only five-rod preview, optional notes and formulas, step dots, and `戻る`/`次へ`/`閉じる` controls.
 
-## 📂 Project Structure
+The six chapters are:
+
+1. `読み方`
+2. `数を置く`
+3. `足す引く`
+4. `5をつかう`
+5. `10をつかう`
+6. `かけ算・わり算`
+
+`次へ` and `戻る` continue across chapter boundaries. The final step changes `次へ` to `もう一度`; selecting a chapter starts it at its first step.
+
+### Japanese tools
+
+- **Consumption tax:** add or remove Japan's 10% standard rate or 8% reduced rate. Tax arithmetic uses whole-yen round-down rules and rejects negative or non-finite input.
+- **Traditional units:** length (`尺`, `寸`, `間`), area (`坪`, approximate `畳`), volume (`升`, `合`), and weight (`貫`, `匁`). Any listed unit can be selected as the input unit.
+- **Practice:** a 60-second addition/subtraction session using operands from 1 through 99. Subtraction stays non-negative; each answer is submitted once, feedback locks the field for 1.2 seconds, and the score/accuracy screen remains after stopping or time expiry.
+
+### Settings and visual system
+
+- Settings persist only bead sound effects and haptic feedback.
+- Light/dark appearance follows the system setting; there is no in-app dark-mode switch.
+- The interface uses Japanese strings from the default `values/strings.xml` for every device locale. Mathematical and international unit symbols are the only intentional Latin-symbol exceptions.
+- The UI uses procedural washi texture, an ensō mark, serif/sans typography, restrained wabi-sabi colors, safe-area handling, and responsive tablet/compact-height layouts.
+
+## Project structure
+
 ```text
-calculator/
-├── app/
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/sorobanzen/app/
-│   │   │   │   ├── data/
-│   │   │   │   │   ├── HistoryDao.kt          (Room Database DAO queries)
-│   │   │   │   │   ├── HistoryDatabase.kt     (Room Database singleton builder)
-│   │   │   │   │   └── HistoryEntity.kt       (Database Table schema)
-│   │   │   │   ├── domain/
-│   │   │   │   │   ├── MathEvaluator.kt       (Mathematical expression parser)
-│   │   │   │   │   ├── SorobanEngine.kt       (Japanese Kanji number reading)
-│   │   │   │   │   ├── TaxCalculator.kt       (Consumption tax standardizer)
-│   │   │   │   │   └── UnitConverter.kt       (Traditional Japanese measurements)
-│   │   │   │   ├── ui/
-│   │   │   │   │   ├── components/
-│   │   │   │   │   │   ├── CalculatorGrid.kt  (Keypad UI)
-│   │   │   │   │   │   ├── ShakeDetector.kt   (Accelerometer shake listener)
-│   │   │   │   │   │   ├── SorobanCanvas.kt   (Custom abacus canvas & gestures)
-│   │   │   │   │   │   └── ZenComponents.kt   (Shared visual system components)
-│   │   │   │   │   ├── screens/
-│   │   │   │   │   │   ├── CalculatorScreen.kt (Portrait layout & sheets controller)
-│   │   │   │   │   │   ├── PracticeScreen.kt  (Mental math module)
-│   │   │   │   │   │   ├── SettingsScreen.kt  (Configuration panel)
-│   │   │   │   │   │   ├── TaxScreen.kt       (Tax breakout card)
-│   │   │   │   │   │   └── UnitConverterScreen.kt (Traditional converter)
-│   │   │   │   │   └── theme/
-│   │   │   │   │       ├── Color.kt           (Light & Dark Wabi-sabi palette)
-│   │   │   │   │       ├── Theme.kt           (Material 3 theme configuration)
-│   │   │   │   │       └── Type.kt            (Typography styles)
-│   │   │   │   └── MainActivity.kt            (Entry point, mode switching & the turned frame)
-│   │   │   ├── res/
-│   │   │   │   ├── values/strings.xml         (Japanese-only resources)
-│   │   │   │   ├── values/themes.xml          (Window style attributes)
-│   │   │   └── AndroidManifest.xml            (App settings declaration)
-│   │   └── build.gradle.kts                   (App module build gradle)
-│   └── proguard-rules.pro                     (Release optimizer configs)
-├── gradle/
-│   ├── wrapper/
-│   │   └── gradle-wrapper.properties          (Gradle wrapper distribution details)
-│   └── libs.versions.toml                     (Dependency versions catalog)
-├── build.gradle.kts                           (Project build rules)
-├── settings.gradle.kts                        (Module loading rules)
-└── gradle.properties                          (Daemon and configuration properties)
+.
+├── app/src/main/java/com/sorobanzen/app/
+│   ├── MainActivity.kt
+│   ├── data/                 # Room history and SharedPreferences
+│   ├── domain/               # Calculator, soroban, tax, units, practice
+│   ├── ui/
+│   │   ├── components/       # Canvas, calculator grid, sensors, shared UI
+│   │   ├── screens/          # Calculator, soroban, tools, settings, guide
+│   │   └── theme/            # Light/dark Material 3 theme
+│   └── viewmodel/            # Activity-scoped state and orchestration
+├── app/src/main/res/         # Japanese strings, themes, icons, backup rules
+├── app/src/test/             # Local JVM tests for domain and hit-testing logic
+├── gradle/                   # Version catalog and Gradle wrapper
+└── memory-bank/              # Durable project context
 ```
 
----
+There is no backend, account system, cloud sync, analytics, or navigation graph. The former Tatami planner, soroban sharing, and text-to-speech readout have been removed; the unit converter's approximate `畳` result remains.
 
-## 🛠️ Build and Run Instructions
+## Build and run
 
-### Prerequisites
-1. **JDK 21** installed.
-2. **Android Studio Koala (2024.1+)** or newer (highly recommended for Jetpack Compose and Kotlin 2.0 compiler previews).
-3. Android device or emulator running **API 26 (Android 8.0)** or higher.
+Prerequisites: JDK 21 and Android SDK tooling for API 35. Open the repository root in Android Studio or run:
 
-### Opening in Android Studio
-1. Launch Android Studio.
-2. Select **File > Open** and choose the root folder of this project (`calculator/`).
-3. Android Studio will automatically recognize the Gradle files, build configuration version catalogs, download the appropriate Gradle Wrapper distribution (`Gradle 8.7`), and synchronize the project dependencies.
-4. Click the **Run** button to compile and install on your target device/emulator.
-
-### Building via Terminal
-From the root folder `calculator/`:
 ```bash
-# On Linux/macOS
+./gradlew test
 ./gradlew assembleDebug
-
-# On Windows (PowerShell)
-.\gradlew.bat assembleDebug
+./gradlew lint
 ```
-The compiled debug APK will be generated under `app/build/outputs/apk/debug/app-debug.apk`.
 
-### Running on an Emulator from the Terminal
+The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. To install and launch it on a connected emulator/device:
+
 ```bash
-# Android SDK tools (add to PATH once, or prefix the commands below)
-export ANDROID_HOME=$HOME/Library/Android/sdk
-export PATH=$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$PATH
-
-# 1. Start an emulator (list yours with: emulator -list-avds)
-emulator -avd Pixel_7 &
-adb wait-for-device
-
-# 2. Build, install, and launch
 ./gradlew installDebug
 adb shell am start -n com.sorobanzen.app/.MainActivity
 ```
 
-Mode switching is driven by the accelerometer, so use the virtual sensor rather
-than the emulator's rotate control (the window itself never rotates):
+Use the virtual accelerometer for emulator mode checks; the rotate control changes the window, while this app keeps the window portrait:
+
 ```bash
-adb emu sensor set acceleration 0:9.8:0    # upright  → calculator
+adb emu sensor set acceleration 0:9.8:0    # upright → calculator
 adb emu sensor set acceleration -9.8:0:0   # sideways → soroban
-adb emu sensor set acceleration 9.8:0:0    # sideways the other way
+adb emu sensor set acceleration 9.8:0:0    # other sideways direction
 ```
-Screenshots (`adb exec-out screencap -p > shot.png`) come out in the window's
-portrait frame and need turning to read soroban mode.
+
+Screenshots are captured in the portrait window frame and need turning to read sideways soroban mode. Physical-device checks are still useful for accelerometer shake, sound, haptic feel, and the hand-held mode transition.

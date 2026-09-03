@@ -1,6 +1,6 @@
 # Progress
 
-Last reviewed: 2026-09-02
+Last reviewed: 2026-09-03
 
 ## Capability status
 
@@ -28,15 +28,17 @@ Last reviewed: 2026-09-02
 Current local JVM test classes:
 
 - `CalculatorEngineTest`: operator replacement and negative history-result loading.
+- `DisplayFormatTest`: grouped display numbers, parser glyphs, spacing, and signed values.
 - `MathEvaluatorTest`: precedence and malformed parentheses.
 - `PracticeSessionTest`: duplicate submission guard and blank input.
 - `SorobanEngineTest`: four-digit Japanese Kanji units.
+- `SorobanBeadTargetTest`: tap and drag target selection for earth beads.
 - `TaxCalculatorTest`: invalid input and add/remove rounding behavior.
 - `UnitConverterTest`: representative round trips.
 
-All pass under `./gradlew test` as of 2026-07-17, including Japanese calculator error display, repeat-equals stability, no-op equals, finite history loading, and readable input-length coverage.
+All 33 local JVM tests pass under `./gradlew test` as of 2026-09-03, including Japanese calculator error display, repeat-equals stability, no-op equals, finite history loading, readable input-length coverage, and soroban bead hit-target coverage.
 
-`assembleDebug` and `lint` also pass as of 2026-07-17. Emulator visual checks covered phone/tablet sizing, portrait/landscape orientation, light/dark themes, calculator, tax, settings, practice focus/results, soroban undo/accessibility, and share generation. A 2026-07-17 API 35 Medium Tablet pass covered the AI-selected hybrid soroban, zero and multi-trillion values, clear, the visual guide, compact-height rendering at 560 dpi, and zero-state share availability. Side-by-side design QA found no remaining P0, P1, or P2 visual issues. An earlier API 36 Pixel 7 check under an `en-US` device locale confirmed that the app still renders Japanese-only labels without clipping.
+`assembleDebug` and `lint` also pass as of 2026-09-03. The latest API 36 Pixel 7 pass covered the six-chapter guide, chapter and step navigation, focused rod wash, the turned seven-rod layout, both sideways sensor directions, calculator/soroban buttons, settings, hidden system bars, and light/dark rendering. Earlier phone/tablet checks covered practice focus/results, tax, safe insets, soroban undo/accessibility, and compact-height layout. No actionable P0, P1, or P2 visual findings remain.
 
 ## Coverage gaps
 

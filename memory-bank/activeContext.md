@@ -7,7 +7,7 @@ Last updated: 2026-09-03
 The branch is `main`. The current implementation includes:
 
 - `AppPreferences`, `CalculatorEngine`, and `PracticeSession` as focused persistence/domain components.
-- JVM coverage for calculator, parser, practice, soroban Kanji readings, tax, and unit conversion.
+- JVM coverage for calculator, display formatting, parser, practice, soroban Kanji readings and bead hit targets, tax, and unit conversion.
 - Persistent bead-sound and haptic preferences. The rod-count and Japanese-TTS preferences, the settings rows that drove them, and the `TextToSpeech` owner in `MainActivity` have all been removed; the board is a fixed `SorobanEngine.ROD_COUNT` of 7.
 - Safer calculator operator/history behavior, practice submission locking, tax validation, and sensor lifecycle fixes.
 - Calculator repeat-equals/no-op handling, capped readable input, and rejection of non-finite loaded results.
@@ -41,12 +41,8 @@ The branch is `main`. The current implementation includes:
 - `./gradlew test assembleDebug lint` — passed on 2026-09-02.
 - The turned-content design was verified on an API 36 Pixel 7 emulator on 2026-09-02 by driving the virtual accelerometer (`adb emu sensor set acceleration`): both sideways turns render the soroban the right way up, bead taps land correctly through the rotation, accessibility bounds are transformed, the そろばん button works from an upright phone and 電卓 from a sideways one, a button's choice survives until the phone is next turned, an upside-down phone stays on the calculator, a 45-degree hold keeps the current mode, rapid flapping settles correctly, the guide overlay and settings both render turned, back handling is ordered correctly, the bars stay hidden across a background/resume, and light and dark both render.
 - The window is now 1080x2400 in every mode, which is the direct evidence that no window rotation happens any more. The old ghost came from the platform's own rotation transition (`snapshot=Surface(name=RotationLayer)`, `finishDrawing of orientation change ... 135ms`); `ROTATION_ANIMATION_JUMPCUT` had not suppressed it. Removing the rotation removed the snapshot.
-- `./gradlew test assembleDebug lint` — passed on 2026-07-17 after the AI-selected hybrid landscape redesign.
-- Landscape emulator verification on 2026-07-17 used an API 35 Medium Tablet AVD and covered the zero state, a multi-trillion active value, bead tap, clear, visual guide, zero-state sharing availability, light/dark themes, and a 560 dpi compact-height stress pass without clipping. The final visual comparison has no remaining P0, P1, or P2 findings.
-- Emulator verification on 2026-07-16 covered practice keyboard focus and scored results, settings system-Back behavior, soroban clear/undo restoration, live accessibility descriptions, share-card creation and chooser launch, and light/dark system-bar rendering.
-- Source audit found no user-visible English or Romaji literals.
-- Emulator visual verification completed on 2026-07-16 using an API 36 Pixel 7 AVD with the device locale set to `en-US`. The calculator still rendered Japanese-only labels, including the new `全消` and `一字` keys, without clipping.
-- Earlier emulator checks on API 35/36 covered portrait and landscape, light and dark modes, calculator, tax sheet, settings, responsive tablet keypad, safe drawing insets, and soroban rendering.
+- Earlier API 35/36 emulator passes covered calculator, tax, settings, practice focus/results, safe drawing insets, soroban undo/accessibility, compact tablet layout, and light/dark rendering.
+- Source audit found no user-visible English or Romaji literals; the Japanese-only interface also rendered correctly under an `en-US` device locale.
 - Physical-device-only behavior (accelerometer shake, audible bead output, haptic feel, and the true feel of the mode transition) still requires a real-device pass.
 
 ## Immediate cautions
@@ -68,7 +64,6 @@ These are observations, not an approved roadmap:
 - Add ViewModel tests for history, preferences, timers, and feature orchestration.
 - Add Compose/instrumentation coverage for orientation, sheets, settings, and Japanese-only rendering.
 - Decide whether to update AGP for official SDK 35 support.
-- Modernize system-bar handling for current edge-to-edge Android APIs.
 - Enable Room schema export and define a migration/testing policy before schema version 2.
 - Consider typed feature/category/history-mode models if those contracts expand.
 

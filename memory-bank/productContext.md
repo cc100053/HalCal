@@ -5,7 +5,7 @@
 How the phone is being held is the top-level mode selector:
 
 - **Upright:** calculator home. Users can open history, settings, tax, traditional units, or practice as overlays/screens.
-- **Sideways:** interactive soroban, full screen with the system bars hidden. Users manipulate rods, inspect numeric/Kanji readings, toggle the sign, clear, shake to reset, or open usage information.
+- **Sideways:** interactive soroban, full screen with the system bars hidden. Users manipulate rods, inspect numeric/Kanji readings, clear, shake to reset, or open usage information.
 - **Settings active:** settings temporarily replaces the mode-selected screen until the user goes back, and is drawn in whichever way the phone is being held.
 
 The window never rotates. It is pinned to portrait (`android:screenOrientation="portrait"`) and the content turns instead: `MainActivity.TurnedFrame` measures the child with the window's width and height swapped and draws it rotated a quarter turn, so the soroban gets true landscape constraints out of a portrait window. Both modes therefore live in one window that never changes shape, and moving between them is a plain cross-fade the app owns end to end.
@@ -14,7 +14,7 @@ That is what removed the ghost. Asking the system to rotate produced a `Rotation
 
 Mode is a single piece of state. `OrientationEventListener` reports the phone's real attitude — the configuration cannot, since the window is pinned — and writes the quarter turn the content needs; the calculator's そろばん button and the soroban's 電卓 button write that same state directly. A button's choice therefore stands until the phone is next turned, with no orientation request to make and no hold to release. Readings within 35 degrees of an axis commit; the gap between leaves the mode alone, so a phone held at an angle cannot flap between the two screens. A phone held upside down still reads as upright.
 
-One consequence to design around: anything that opens its own window — `Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast` — comes up in the window's portrait orientation rather than the reader's. Inside soroban mode, use an inline overlay (`SorobanGuideOverlay`) and the snackbar host instead.
+One consequence to design around: anything that opens its own window — `Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast` — comes up in the window's portrait orientation rather than the reader's. Inside soroban mode, use the inline `UsageGuideSheet` overlay and the snackbar host instead.
 
 ## Feature behavior
 

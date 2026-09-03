@@ -31,7 +31,7 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 - Expose ViewModel state as read-only `StateFlow`/`SharedFlow`. Launch database work and timers in `viewModelScope`.
 - Preserve the mode contract: an upright phone is calculator mode, a sideways phone is soroban mode, and settings temporarily takes over either. The activity window is pinned to portrait for the life of the app (`android:screenOrientation="portrait"`) and the *content* turns instead — `MainActivity.TurnedFrame` lays the child out with the window's width and height swapped and draws it rotated. Nothing requests a system rotation, so there is no `RotationLayer` snapshot and no ghost of the outgoing screen.
 - Mode is one piece of state. `OrientationEventListener` writes the turn the content needs, and the そろばん/電卓 buttons write the same state directly; a button's choice stands until the phone is next turned. Do not reintroduce `requestedOrientation`, a hold, or a release — there is no window rotation left to wait for.
-- Anything that opens its own window (`Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast`) comes up in the window's portrait orientation, not the reader's, so it is unusable while the phone is sideways. Inside the turned frame use an inline overlay instead — see `SorobanGuideOverlay` — and the existing snackbar host in place of a `Toast`.
+- Anything that opens its own window (`Dialog`, `AlertDialog`, `ModalBottomSheet`, `Toast`) comes up in the window's portrait orientation, not the reader's, so it is unusable while the phone is sideways. Inside the turned frame use the inline `UsageGuideSheet` overlay instead, and use the existing snackbar host in place of a `Toast`.
 - `TurnedFrame` pads for the display cutout and consumes the rest of the window insets, because a turned screen would otherwise pad the wrong physical edge. Soroban mode also hides the system bars, which would otherwise run down a vertical edge with their text on its side.
 - The mode transition fades the incoming screen in over an outgoing one held at full opacity (`ContentTransform` with `fadeOut(snap(delayMillis = FADE_MILLIS))` and `targetContentZIndex = 1f`). Do not fade both at once: that leaves frames where neither screen is opaque and whatever sits behind them flashes through. For the same reason the root `Surface` is painted `colorScheme.background`, the tone the screens themselves paint, not the lighter `colorScheme.surface`.
 - Treat each soroban rod as a decimal digit in `0..9`. Rod arrays are most-significant digit first. The rod count is fixed at `SorobanEngine.ROD_COUNT` (7) and is no longer a user preference.
@@ -46,7 +46,7 @@ See `memory-bank/systemPatterns.md` for the runtime and data-flow map.
 - The soroban instrument itself follows the 黒檀と骨 (Ebony & Bone) handoff and is deliberately outside that theme: an ebony-lacquer frame, brass inlay and rods, a bone reckoning field, and black-lacquer bi-conical beads, identical in light and dark. The frame and the beam carry a fine lengthwise ebony grain drawn from a fixed seed. A lacquered instrument does not change colour with the room, and its palette is fixed in `SorobanCanvas.kt` rather than branched on `isSystemInDarkTheme`.
 - Geometry in `SorobanCanvas.kt` is written in the handoff's own 768 x 352 coordinate space and scaled by `unit = boardHeight / BOARD_HEIGHT`, so the constants can be read straight against the design. Rod pitch is the only thing that depends on the rod count.
 - Support both system light and dark themes.
-- Put user-facing text in both `res/values/strings.xml` and `res/values-ja/strings.xml`. Existing hard-coded bilingual strings are technical debt, not a pattern to copy.
+- Keep user-facing text in the default `res/values/strings.xml`; the current product is Japanese-only across device locales. Do not add an English locale overlay unless localization is explicitly reintroduced.
 - Respect the sound and haptic preference toggles when adding interactions. They are the only two settings left.
 - Canvas behavior, mode changes, and accelerometer reset require device/emulator verification; JVM tests cannot validate them. On an emulator, drive mode changes with `adb emu sensor set acceleration` (`0:9.8:0` upright, `-9.8:0:0` and `9.8:0:0` for the two sideways turns) rather than the rotate control, since the window no longer rotates. Screenshots come out in the window's portrait frame and need turning to be read.
 
@@ -75,7 +75,7 @@ Choose checks proportional to the change:
 - Do not edit generated outputs under `.gradle/`, `build/`, or `app/build/`.
 - Do not commit `local.properties`, APKs, IDE state, or runtime logs such as `firebase-debug.log`.
 - Do not introduce a new framework, navigation model, persistence layer, or dependency-injection system without documenting the reason in `memory-bank/systemPatterns.md` and `memory-bank/activeContext.md`.
-- When changing a feature contract, update its tests, localized resources, `README.md` if user-facing, and the memory bank if future agents need the new fact.
+- When changing a feature contract, update its tests, the default Japanese resources, `README.md` if user-facing, and the memory bank if future agents need the new fact.
 
 ## Commit and push policy
 

@@ -7,7 +7,7 @@ Soroban Zen (`そろばん禅`) is a minimalist Android calculator inspired by J
 ## Core promise
 
 - Offer fast everyday arithmetic without visual clutter.
-- Make a traditional 1:5 Japanese soroban approachable through touch, animation, readings, and audio.
+- Make a traditional 1:5 Japanese soroban approachable through touch, animation, readings, and bead sounds.
 - Support Japanese context through consumption-tax calculations, traditional unit conversion, and timed mental-math practice.
 - Feel calm and crafted through warm colors, simple typography, haptics, bead sounds, and smooth orientation transitions.
 
@@ -19,7 +19,7 @@ Soroban Zen (`そろばん禅`) is a minimalist Android calculator inspired by J
 - Metric-to-traditional conversions for length, area, volume, and weight.
 - A 60-second addition/subtraction practice session.
 - Persistent history in Room and persistent settings in SharedPreferences.
-- English and Japanese Android resources plus system-driven light/dark themes.
+- Japanese Android resources plus system-driven light/dark themes.
 
 ## Out of current scope
 
@@ -36,4 +36,4 @@ Soroban Zen (`そろばん禅`) is a minimalist Android calculator inspired by J
 - Soroban interactions remain responsive and faithfully encode each rod as one decimal digit.
 - History and preferences survive app restarts.
 - Platform integrations clean up resources and fail gracefully.
-- English and Japanese users can understand the main flows.
+- Japanese users can understand the main flows on every device locale.

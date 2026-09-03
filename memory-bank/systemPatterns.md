@@ -37,7 +37,7 @@ MainActivity
 
 - `CalculatorEngine`: stateful keypad semantics and display formatting.
 - `MathEvaluator`: stateless recursive-descent parser returning `Double.NaN` for invalid expressions.
-- `SorobanEngine`: stateless Kanji and Romaji conversion.
+- `SorobanEngine`: stateless Japanese Kanji conversion.
 - `TaxCalculator`: validated `BigDecimal`-based tax breakdowns.
 - `UnitConverter`: stateless conversion constants/functions.
 - `PracticeSession`: stateful submission guard and score/total progression, independent of Android timers.
