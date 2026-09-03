@@ -92,15 +92,10 @@
     <string name="guide_step_select">%1$d 番目の手順へ</string>
 
     <string name="guide_chapter_read">読み方</string>
-    <string name="guide_chapter_read_latin">Reading</string>
     <string name="guide_chapter_add">たし算</string>
-    <string name="guide_chapter_add_latin">Addition</string>
     <string name="guide_chapter_sub">ひき算</string>
-    <string name="guide_chapter_sub_latin">Subtraction</string>
     <string name="guide_chapter_mul">かけ算</string>
-    <string name="guide_chapter_mul_latin">Multiplication</string>
     <string name="guide_chapter_div">わり算</string>
-    <string name="guide_chapter_div_latin">Division</string>
 
     <string name="guide_add_1_title">3 を置く</string>
     <string name="guide_add_1_body">一玉を三つ、梁へ上げます。</string>

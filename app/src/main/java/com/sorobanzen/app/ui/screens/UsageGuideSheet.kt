@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.requiredHeight
@@ -56,9 +57,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sorobanzen.app.R
-import com.sorobanzen.app.ui.components.MINI_BOARD_ASPECT
-import com.sorobanzen.app.ui.components.MINI_ROD_COUNT
-import com.sorobanzen.app.ui.components.SorobanMiniBoard
+import com.sorobanzen.app.ui.components.GUIDE_ROD_COUNT
+import com.sorobanzen.app.ui.components.SorobanGuideBoard
+import com.sorobanzen.app.ui.components.sorobanBoardAspect
 
 /*
  * 使い方 — the chaptered usage guide.
@@ -89,6 +90,7 @@ private val Mincho = FontFamily.Serif
 private val Gothic = FontFamily.SansSerif
 
 private const val SHEET_WIDTH = 980f
+private const val BOARD_WIDTH = 360f
 // The reference sizes the sheet to its content, at most about 600. One height for every step
 // instead: the footer must not move as a learner walks through a chapter, and the tallest step
 // here is the board plus its caption.
@@ -105,20 +107,19 @@ private class GuideStep(
     val highlight: Int? = null
 ) {
     init {
-        require(rods.size == MINI_ROD_COUNT) { "a lesson step needs $MINI_ROD_COUNT rods" }
+        require(rods.size == GUIDE_ROD_COUNT) { "a lesson step needs $GUIDE_ROD_COUNT rods" }
     }
 }
 
 private class GuideChapter(
     @StringRes val label: Int,
-    @StringRes val latin: Int,
     val steps: List<GuideStep>
 )
 
 // The copy is drafted from standard technique and still wants a review pass from someone who
 // teaches it. It lives here as data so that pass lands in strings.xml without touching layout.
 private val LESSONS = listOf(
-    GuideChapter(R.string.guide_chapter_read, R.string.guide_chapter_read_latin, listOf(
+    GuideChapter(R.string.guide_chapter_read, listOf(
         GuideStep(
             title = R.string.soroban_guide_heaven_title,
             body = R.string.soroban_guide_heaven_description,
@@ -144,7 +145,7 @@ private val LESSONS = listOf(
             highlight = 4
         )
     )),
-    GuideChapter(R.string.guide_chapter_add, R.string.guide_chapter_add_latin, listOf(
+    GuideChapter(R.string.guide_chapter_add, listOf(
         GuideStep(
             title = R.string.guide_add_1_title,
             body = R.string.guide_add_1_body,
@@ -183,7 +184,7 @@ private val LESSONS = listOf(
             highlight = 4
         )
     )),
-    GuideChapter(R.string.guide_chapter_sub, R.string.guide_chapter_sub_latin, listOf(
+    GuideChapter(R.string.guide_chapter_sub, listOf(
         GuideStep(
             title = R.string.guide_sub_1_title,
             body = R.string.guide_sub_1_body,
@@ -207,7 +208,7 @@ private val LESSONS = listOf(
             highlight = 4
         )
     )),
-    GuideChapter(R.string.guide_chapter_mul, R.string.guide_chapter_mul_latin, listOf(
+    GuideChapter(R.string.guide_chapter_mul, listOf(
         GuideStep(
             title = R.string.guide_mul_1_title,
             body = R.string.guide_mul_1_body,
@@ -231,7 +232,7 @@ private val LESSONS = listOf(
             highlight = 3
         )
     )),
-    GuideChapter(R.string.guide_chapter_div, R.string.guide_chapter_div_latin, listOf(
+    GuideChapter(R.string.guide_chapter_div, listOf(
         GuideStep(
             title = R.string.guide_div_1_title,
             body = R.string.guide_div_1_body,
@@ -274,6 +275,20 @@ fun BoxScope.UsageGuideSheet(onClose: () -> Unit) {
     fun go(chapter: Int, step: Int) {
         chapterIndex = chapter
         stepIndex = step.coerceIn(0, LESSONS[chapter].steps.lastIndex)
+    }
+
+    // The chapters are one lesson in order, so 次へ and 戻る run through the whole guide rather
+    // than stopping at a chapter's edge. Only the last step of the last chapter turns back.
+    fun next() = when {
+        stepIndex < chapter.steps.lastIndex -> go(chapterIndex, stepIndex + 1)
+        chapterIndex < LESSONS.lastIndex -> go(chapterIndex + 1, 0)
+        else -> go(0, 0)
+    }
+
+    fun back() = when {
+        stepIndex > 0 -> go(chapterIndex, stepIndex - 1)
+        chapterIndex > 0 -> go(chapterIndex - 1, LESSONS[chapterIndex - 1].steps.lastIndex)
+        else -> Unit
     }
 
     val context = LocalContext.current
@@ -340,7 +355,6 @@ fun BoxScope.UsageGuideSheet(onClose: () -> Unit) {
                     .padding(start = 38.dp, end = 38.dp, top = 34.dp, bottom = 26.dp)
             ) {
                 GuideHeader(
-                    latin = stringResource(id = chapter.latin),
                     counter = stringResource(
                         id = R.string.guide_step_counter,
                         stepIndex + 1,
@@ -361,7 +375,12 @@ fun BoxScope.UsageGuideSheet(onClose: () -> Unit) {
                 GuideFooter(
                     stepIndex = stepIndex,
                     stepCount = chapter.steps.size,
+                    atFirstOfGuide = chapterIndex == 0 && stepIndex == 0,
+                    atLastOfGuide = chapterIndex == LESSONS.lastIndex &&
+                        stepIndex == chapter.steps.lastIndex,
                     onStep = { go(chapterIndex, it) },
+                    onBack = ::back,
+                    onNext = ::next,
                     onClose = onClose
                 )
             }
@@ -370,30 +389,20 @@ fun BoxScope.UsageGuideSheet(onClose: () -> Unit) {
 }
 
 @Composable
-private fun GuideHeader(latin: String, counter: String) {
+private fun GuideHeader(counter: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom
     ) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = stringResource(id = R.string.guide),
-                fontFamily = Mincho,
-                fontWeight = FontWeight.Normal,
-                fontSize = 27.sp,
-                letterSpacing = 0.5.sp,
-                color = GuideInk
-            )
-            Spacer(modifier = Modifier.width(14.dp))
-            Text(
-                text = latin,
-                fontFamily = Gothic,
-                fontSize = 11.sp,
-                letterSpacing = 1.4.sp,
-                color = GuideInk.copy(alpha = 0.4f)
-            )
-        }
+        Text(
+            text = stringResource(id = R.string.guide),
+            fontFamily = Mincho,
+            fontWeight = FontWeight.Normal,
+            fontSize = 27.sp,
+            letterSpacing = 0.5.sp,
+            color = GuideInk
+        )
         Text(
             text = counter,
             fontFamily = Gothic,
@@ -450,7 +459,9 @@ private fun GuideBody(step: GuideStep, modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(44.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             val reading = step.rods.joinToString("").trimStart('0').ifEmpty { "0" }
-            SorobanMiniBoard(
+            // The board's own corner radius and lift, as the soroban screen gives it.
+            val boardShape = RoundedCornerShape(8.dp)
+            SorobanGuideBoard(
                 rods = step.rods,
                 highlightRod = step.highlight,
                 accessibilityDescription = stringResource(
@@ -458,8 +469,10 @@ private fun GuideBody(step: GuideStep, modifier: Modifier = Modifier) {
                     reading
                 ),
                 modifier = Modifier
-                    .requiredHeight(228.dp)
-                    .requiredWidth((228f * MINI_BOARD_ASPECT).dp)
+                    .requiredWidth(BOARD_WIDTH.dp)
+                    .aspectRatio(sorobanBoardAspect(GUIDE_ROD_COUNT))
+                    .shadow(10.dp, boardShape, clip = false)
+                    .clip(boardShape)
             )
             if (step.formula != null) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -526,7 +539,11 @@ private fun GuideBody(step: GuideStep, modifier: Modifier = Modifier) {
 private fun GuideFooter(
     stepIndex: Int,
     stepCount: Int,
+    atFirstOfGuide: Boolean,
+    atLastOfGuide: Boolean,
     onStep: (Int) -> Unit,
+    onBack: () -> Unit,
+    onNext: () -> Unit,
     onClose: () -> Unit
 ) {
     Spacer(modifier = Modifier.height(28.dp))
@@ -569,8 +586,8 @@ private fun GuideFooter(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 戻る stays in place on the first step, dimmed: the footer must not reflow.
-            val atStart = stepIndex == 0
+            // 戻る stays in place at the very start, dimmed: the footer must not reflow.
+            val atStart = atFirstOfGuide
             Text(
                 text = stringResource(id = R.string.guide_back),
                 modifier = Modifier
@@ -579,7 +596,7 @@ private fun GuideFooter(
                         if (atStart) {
                             Modifier
                         } else {
-                            Modifier.clickable { onStep(stepIndex - 1) }
+                            Modifier.clickable { onBack() }
                         }
                     )
                     .padding(horizontal = 16.dp, vertical = 9.dp),
@@ -587,15 +604,14 @@ private fun GuideFooter(
                 fontSize = 13.sp,
                 color = if (atStart) GuideDisabled else GuideInk.copy(alpha = 0.6f)
             )
-            val atEnd = stepIndex == stepCount - 1
             Text(
                 text = stringResource(
-                    id = if (atEnd) R.string.guide_restart else R.string.guide_next
+                    id = if (atLastOfGuide) R.string.guide_restart else R.string.guide_next
                 ),
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (atEnd) GuideAccent else GuideInk)
-                    .clickable { onStep(if (atEnd) 0 else stepIndex + 1) }
+                    .background(if (atLastOfGuide) GuideAccent else GuideInk)
+                    .clickable { onNext() }
                     .padding(horizontal = 22.dp, vertical = 9.dp),
                 fontFamily = Gothic,
                 fontWeight = FontWeight.Medium,
