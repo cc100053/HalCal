@@ -3,6 +3,7 @@ package com.sorobanzen.app.ui.screens
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -54,10 +56,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sorobanzen.app.R
 import com.sorobanzen.app.ui.components.GUIDE_ROD_COUNT
+import com.sorobanzen.app.ui.components.GUIDE_STEP_MILLIS
 import com.sorobanzen.app.ui.components.SorobanGuideBoard
 import com.sorobanzen.app.ui.components.sorobanBoardAspect
 
@@ -89,12 +93,12 @@ private val ScrimStops = arrayOf(
 private val Mincho = FontFamily.Serif
 private val Gothic = FontFamily.SansSerif
 
-private const val SHEET_WIDTH = 980f
-private const val BOARD_WIDTH = 360f
+private const val SHEET_WIDTH = 1060f
+private const val BOARD_WIDTH = 400f
 // The reference sizes the sheet to its content, at most about 600. One height for every step
 // instead: the footer must not move as a learner walks through a chapter, and the tallest step
 // here is the board plus its caption.
-private const val SHEET_HEIGHT = 560f
+private const val SHEET_HEIGHT = 580f
 
 /** One idea. [rods] is the exact board state, most-significant digit first. */
 private class GuideStep(
@@ -365,6 +369,11 @@ fun BoxScope.UsageGuideSheet(onClose: () -> Unit) {
         )
     }
 
+    // The board animates its beads and its focus wash over GUIDE_STEP_MILLIS. The words have to
+    // travel on the same clock, or the text snaps to the next step while the beads are still
+    // sliding to it.
+    val stepMillis = if (reduceMotion) 0 else GUIDE_STEP_MILLIS
+
     val entryOffset = with(LocalDensity.current) { 6.dp.toPx() }
 
     Box(
@@ -388,62 +397,70 @@ fun BoxScope.UsageGuideSheet(onClose: () -> Unit) {
                 (maxHeight - 24.dp) / SHEET_HEIGHT.dp,
                 1f
             ).coerceAtLeast(0.1f)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        alpha = entry.value
-                        translationY = (1f - entry.value) * entryOffset
-                    }
-                    // Required, not plain, size: the sheet is laid out at its design size
-                    // whatever room the turned frame has, and the scale above brings it back.
-                    .requiredWidth(SHEET_WIDTH.dp)
-                    .requiredHeight(SHEET_HEIGHT.dp)
-                    .shadow(30.dp, RoundedCornerShape(20.dp))
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(GuidePaper)
-                    // Swallows taps so a press on the sheet does not read as a press outside it.
-                    .pointerInput(Unit) { detectTapGestures { } }
-                    .padding(start = 38.dp, end = 38.dp, top = 34.dp, bottom = 26.dp)
+            // The sheet is drawn in its own 1060 x 580 space by scaling the density rather than
+            // by scaling a graphics layer over a required size. A required size would overflow
+            // the turned frame by ~94dp at each end, and the sheet's first frames come up
+            // clipped to the frame while its layer settles: the header and the footer arrive a
+            // fifth of a second after the middle of the sheet. Scaled density instead makes the
+            // laid-out size the drawn size, so nothing overflows and there is nothing to clip.
+            val outer = LocalDensity.current
+            CompositionLocalProvider(
+                LocalDensity provides Density(outer.density * scale, outer.fontScale)
             ) {
-                GuideHeader(
-                    counter = stringResource(
-                        id = R.string.guide_step_counter,
-                        stepIndex + 1,
-                        chapter.steps.size
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .graphicsLayer {
+                            alpha = entry.value
+                            translationY = (1f - entry.value) * entryOffset
+                        }
+                        .width(SHEET_WIDTH.dp)
+                        .height(SHEET_HEIGHT.dp)
+                        .shadow(30.dp, RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(GuidePaper)
+                        // Swallows taps so a press on the sheet does not read as a press outside it.
+                        .pointerInput(Unit) { detectTapGestures { } }
+                        .padding(start = 38.dp, end = 38.dp, top = 34.dp, bottom = 26.dp)
+                ) {
+                    GuideHeader(
+                        counter = stringResource(
+                            id = R.string.guide_step_counter,
+                            stepIndex + 1,
+                            chapter.steps.size
+                        )
                     )
-                )
-                Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                GuideChapterTabs(
-                    activeIndex = chapterIndex,
-                    // A chapter always opens on its first step.
-                    onPick = { go(it, 0) }
-                )
-                Spacer(modifier = Modifier.height(26.dp))
+                    GuideChapterTabs(
+                        activeIndex = chapterIndex,
+                        // A chapter always opens on its first step.
+                        onPick = { go(it, 0) }
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                GuideBody(step = step, modifier = Modifier.weight(1f))
+                    GuideBody(step = step, stepMillis = stepMillis, modifier = Modifier.weight(1f))
 
-                val atChapterEnd = stepIndex == chapter.steps.lastIndex
-                GuideFooter(
-                    stepIndex = stepIndex,
-                    stepCount = chapter.steps.size,
-                    atFirstOfGuide = chapterIndex == 0 && stepIndex == 0,
-                    atLastOfGuide = atChapterEnd && chapterIndex == LESSONS.lastIndex,
-                    // The last step of a chapter says where 次へ is about to take the reader,
-                    // and changes colour, so leaving the chapter is never a surprise.
-                    nextChapter = if (atChapterEnd && chapterIndex < LESSONS.lastIndex) {
-                        stringResource(id = LESSONS[chapterIndex + 1].label)
-                    } else {
-                        null
-                    },
-                    onStep = { go(chapterIndex, it) },
-                    onBack = ::back,
-                    onNext = ::next,
-                    onClose = onClose
-                )
+                    val atChapterEnd = stepIndex == chapter.steps.lastIndex
+                    GuideFooter(
+                        stepIndex = stepIndex,
+                        stepCount = chapter.steps.size,
+                        atFirstOfGuide = chapterIndex == 0 && stepIndex == 0,
+                        atLastOfGuide = atChapterEnd && chapterIndex == LESSONS.lastIndex,
+                        stepMillis = stepMillis,
+                        // The last step of a chapter says where 次へ is about to take the reader,
+                        // and changes colour, so leaving the chapter is never a surprise.
+                        nextChapter = if (atChapterEnd && chapterIndex < LESSONS.lastIndex) {
+                            stringResource(id = LESSONS[chapterIndex + 1].label)
+                        } else {
+                            null
+                        },
+                        onStep = { go(chapterIndex, it) },
+                        onBack = ::back,
+                        onNext = ::next,
+                        onClose = onClose
+                    )
+                }
             }
         }
     }
@@ -459,15 +476,15 @@ private fun GuideHeader(counter: String) {
         Text(
             text = stringResource(id = R.string.guide),
             fontFamily = Mincho,
-            fontWeight = FontWeight.Normal,
-            fontSize = 27.sp,
+            fontWeight = FontWeight.Medium,
+            fontSize = 42.sp,
             letterSpacing = 0.5.sp,
             color = GuideInk
         )
         Text(
             text = counter,
             fontFamily = Gothic,
-            fontSize = 12.sp,
+            fontSize = 17.sp,
             letterSpacing = 0.5.sp,
             color = GuideMuted
         )
@@ -497,7 +514,7 @@ private fun GuideChapterTabs(activeIndex: Int, onPick: (Int) -> Unit) {
                         text = stringResource(id = chapter.label),
                         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 11.dp),
                         fontFamily = Mincho,
-                        fontSize = 15.sp,
+                        fontSize = 22.sp,
                         fontWeight = if (active) FontWeight.Medium else FontWeight.Normal,
                         color = if (active) GuideInk else GuideMuted
                     )
@@ -516,8 +533,12 @@ private fun GuideChapterTabs(activeIndex: Int, onPick: (Int) -> Unit) {
 }
 
 @Composable
-private fun GuideBody(step: GuideStep, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(44.dp)) {
+private fun GuideBody(
+    step: GuideStep,
+    stepMillis: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             val reading = step.rods.joinToString("").trimStart('0').ifEmpty { "0" }
             // The board's own corner radius and lift, as the soroban screen gives it.
@@ -535,13 +556,19 @@ private fun GuideBody(step: GuideStep, modifier: Modifier = Modifier) {
                     .shadow(10.dp, boardShape, clip = false)
                     .clip(boardShape)
             )
-            if (step.formula != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            // Reserved whether or not this step has a formula, so the board never shifts up.
+            Crossfade(
+                targetState = step.formula,
+                animationSpec = tween(stepMillis),
+                label = "formula"
+            ) {
                 Text(
-                    text = step.formula,
+                    text = it.orEmpty(),
+                    modifier = Modifier.requiredWidth(BOARD_WIDTH.dp),
                     fontFamily = Mincho,
                     fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp,
+                    fontSize = 22.sp,
                     letterSpacing = 0.6.sp,
                     color = GuideAccent,
                     textAlign = TextAlign.Center
@@ -549,48 +576,58 @@ private fun GuideBody(step: GuideStep, modifier: Modifier = Modifier) {
             }
         }
 
-        Column(modifier = Modifier.padding(top = 6.dp)) {
-            Text(
-                text = stringResource(id = step.title),
-                fontFamily = Mincho,
-                fontWeight = FontWeight.Medium,
-                fontSize = 19.sp,
-                color = GuideInk
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = stringResource(id = step.body),
-                modifier = Modifier.widthIn(max = 400.dp),
-                fontFamily = Gothic,
-                fontSize = 13.5.sp,
-                lineHeight = 27.sp,
-                color = GuideBodyInk
-            )
-            if (step.note != null) {
-                Spacer(modifier = Modifier.height(20.dp))
-                Row(
+        Crossfade(
+            targetState = step,
+            animationSpec = tween(stepMillis),
+            modifier = Modifier.padding(top = 6.dp),
+            label = "stepText"
+        ) { GuideStepText(step = it) }
+    }
+}
+
+@Composable
+private fun GuideStepText(step: GuideStep) {
+    Column {
+        Text(
+            text = stringResource(id = step.title),
+            fontFamily = Mincho,
+            fontWeight = FontWeight.Medium,
+            fontSize = 29.sp,
+            color = GuideInk
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = stringResource(id = step.body),
+            modifier = Modifier.widthIn(max = 500.dp),
+            fontFamily = Gothic,
+            fontSize = 20.sp,
+            lineHeight = 36.sp,
+            color = GuideBodyInk
+        )
+        if (step.note != null) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(GuideNoteBackground)
+                    .padding(horizontal = 14.dp, vertical = 11.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp)
+            ) {
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(GuideNoteBackground)
-                        .padding(horizontal = 14.dp, vertical = 11.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(9.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(5.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(GuideAccent)
-                    )
-                    Text(
-                        text = stringResource(id = step.note),
-                        fontFamily = Gothic,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.5.sp,
-                        letterSpacing = 0.3.sp,
-                        color = GuideNoteInk
-                    )
-                }
+                        .size(8.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(GuideAccent)
+                )
+                Text(
+                    text = stringResource(id = step.note),
+                    fontFamily = Gothic,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 18.sp,
+                    letterSpacing = 0.3.sp,
+                    color = GuideNoteInk
+                )
             }
         }
     }
@@ -602,15 +639,16 @@ private fun GuideFooter(
     stepCount: Int,
     atFirstOfGuide: Boolean,
     atLastOfGuide: Boolean,
+    stepMillis: Int,
     nextChapter: String?,
     onStep: (Int) -> Unit,
     onBack: () -> Unit,
     onNext: () -> Unit,
     onClose: () -> Unit
 ) {
-    Spacer(modifier = Modifier.height(28.dp))
+    Spacer(modifier = Modifier.height(20.dp))
     Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(GuideFooterHairline))
-    Spacer(modifier = Modifier.height(18.dp))
+    Spacer(modifier = Modifier.height(14.dp))
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -621,7 +659,7 @@ private fun GuideFooter(
                 val active = index == stepIndex
                 val width by animateDpAsState(
                     targetValue = if (active) 20.dp else 7.dp,
-                    animationSpec = tween(300),
+                    animationSpec = tween(stepMillis),
                     label = "stepDot"
                 )
                 val label = stringResource(id = R.string.guide_step_select, index + 1)
@@ -661,9 +699,9 @@ private fun GuideFooter(
                             Modifier.clickable { onBack() }
                         }
                     )
-                    .padding(horizontal = 16.dp, vertical = 9.dp),
+                    .padding(horizontal = 20.dp, vertical = 13.dp),
                 fontFamily = Gothic,
-                fontSize = 13.sp,
+                fontSize = 19.sp,
                 color = if (atStart) GuideDisabled else GuideInk.copy(alpha = 0.6f)
             )
             Text(
@@ -679,10 +717,10 @@ private fun GuideFooter(
                         if (atLastOfGuide || nextChapter != null) GuideAccent else GuideInk
                     )
                     .clickable { onNext() }
-                    .padding(horizontal = 22.dp, vertical = 9.dp),
+                    .padding(horizontal = 26.dp, vertical = 13.dp),
                 fontFamily = Gothic,
                 fontWeight = FontWeight.Medium,
-                fontSize = 13.sp,
+                fontSize = 19.sp,
                 letterSpacing = 0.5.sp,
                 color = GuidePaper
             )
@@ -691,9 +729,9 @@ private fun GuideFooter(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { onClose() }
-                    .padding(horizontal = 16.dp, vertical = 9.dp),
+                    .padding(horizontal = 20.dp, vertical = 13.dp),
                 fontFamily = Gothic,
-                fontSize = 13.sp,
+                fontSize = 19.sp,
                 letterSpacing = 0.5.sp,
                 color = GuideAccent
             )

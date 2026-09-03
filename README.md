@@ -33,6 +33,8 @@ Current build: `versionName 1.0`, `versionCode 1`, minimum API 26, compile/targe
 
 The sideways rail opens an inline guide overlay, so it remains readable inside the turned frame. It is one stepped lesson with a read-only five-rod preview, optional notes and formulas, step dots, and `戻る`/`次へ`/`閉じる` controls.
 
+The sheet is written in a fixed 1060 x 580 design space and fitted to the turned frame by scaling the density it composes in, so type, board, and controls all keep the design's proportions on any screen.
+
 The six chapters are:
 
 1. `読み方`
@@ -51,7 +53,7 @@ The six chapters are:
 
 ### Settings and visual system
 
-- Settings persist only bead sound effects and haptic feedback.
+- Settings persist only haptic feedback. The bead sound effect has been removed.
 - Light/dark appearance follows the system setting; there is no in-app dark-mode switch.
 - The interface uses Japanese strings from the default `values/strings.xml` for every device locale. Mathematical and international unit symbols are the only intentional Latin-symbol exceptions.
 - The UI uses procedural washi texture, an ensō mark, serif/sans typography, restrained wabi-sabi colors, safe-area handling, and responsive tablet/compact-height layouts.
@@ -102,4 +104,4 @@ adb emu sensor set acceleration -9.8:0:0   # sideways → soroban
 adb emu sensor set acceleration 9.8:0:0    # other sideways direction
 ```
 
-Screenshots are captured in the portrait window frame and need turning to read sideways soroban mode. Physical-device checks are still useful for accelerometer shake, sound, haptic feel, and the hand-held mode transition.
+Screenshots are captured in the portrait window frame and need turning to read sideways soroban mode. Physical-device checks are still useful for accelerometer shake, haptic feel, and the hand-held mode transition.
