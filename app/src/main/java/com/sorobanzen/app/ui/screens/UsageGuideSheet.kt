@@ -116,6 +116,12 @@ private class GuideChapter(
     val steps: List<GuideStep>
 )
 
+// The chapters are the skills a beginner picks up, in the order each one needs the last: what a
+// bead is worth, how to place a number, the moves that need no trick, the 5-complement, the
+// 10-complement, and only then the two operations built out of all of it. Naming the chapters
+// after the four arithmetic operations instead would teach the 5- and 10-complements twice, under
+// names that hide them, which is what the first draft of this guide did.
+//
 // The copy is drafted from standard technique and still wants a review pass from someone who
 // teaches it. It lives here as data so that pass lands in strings.xml without touching layout.
 private val LESSONS = listOf(
@@ -137,121 +143,167 @@ private val LESSONS = listOf(
             body = R.string.soroban_guide_dots_description,
             rods = intArrayOf(0, 0, 0, 0, 0)
         ),
+        // Two rods, because every chapter after this one carries between them.
         GuideStep(
             title = R.string.soroban_guide_value_title,
             body = R.string.soroban_guide_value_description,
-            rods = intArrayOf(0, 0, 0, 0, 7),
-            formula = "7 = 5 + 2",
-            highlight = 4
+            rods = intArrayOf(0, 0, 0, 2, 7),
+            formula = "27 = 20 + 7"
         )
     )),
-    GuideChapter(R.string.guide_chapter_add, listOf(
+    GuideChapter(R.string.guide_chapter_place, listOf(
         GuideStep(
-            title = R.string.guide_add_1_title,
-            body = R.string.guide_add_1_body,
+            title = R.string.guide_place_1_title,
+            body = R.string.guide_place_1_body,
             rods = intArrayOf(0, 0, 0, 0, 3),
             formula = "3",
             highlight = 4
         ),
         GuideStep(
-            title = R.string.guide_add_2_title,
-            body = R.string.guide_add_2_body,
+            title = R.string.guide_place_2_title,
+            body = R.string.guide_place_2_body,
             rods = intArrayOf(0, 0, 0, 0, 8),
-            note = R.string.guide_add_2_note,
-            formula = "3 + 5",
+            formula = "8 = 5 + 3",
             highlight = 4
         ),
         GuideStep(
-            title = R.string.guide_add_3_title,
-            body = R.string.guide_add_3_body,
+            title = R.string.guide_place_3_title,
+            body = R.string.guide_place_3_body,
+            rods = intArrayOf(0, 0, 0, 0, 0),
+            formula = "0",
+            highlight = 4
+        )
+    )),
+    GuideChapter(R.string.guide_chapter_direct, listOf(
+        GuideStep(
+            title = R.string.guide_direct_1_title,
+            body = R.string.guide_direct_1_body,
+            rods = intArrayOf(0, 0, 0, 0, 4),
+            note = R.string.guide_direct_1_note,
+            formula = "1 + 3 = 4",
+            highlight = 4
+        ),
+        GuideStep(
+            title = R.string.guide_direct_2_title,
+            body = R.string.guide_direct_2_body,
+            rods = intArrayOf(0, 0, 0, 0, 8),
+            formula = "6 + 2 = 8",
+            highlight = 4
+        ),
+        GuideStep(
+            title = R.string.guide_direct_3_title,
+            body = R.string.guide_direct_3_body,
+            rods = intArrayOf(0, 0, 0, 0, 5),
+            formula = "7 − 2 = 5",
+            highlight = 4
+        )
+    )),
+    GuideChapter(R.string.guide_chapter_five, listOf(
+        GuideStep(
+            title = R.string.guide_five_1_title,
+            body = R.string.guide_five_1_body,
+            rods = intArrayOf(0, 0, 0, 0, 4),
+            formula = "4 + 3",
+            highlight = 4
+        ),
+        GuideStep(
+            title = R.string.guide_five_2_title,
+            body = R.string.guide_five_2_body,
+            rods = intArrayOf(0, 0, 0, 0, 9),
+            note = R.string.guide_five_2_note,
+            formula = "4 + 5",
+            highlight = 4
+        ),
+        GuideStep(
+            title = R.string.guide_five_3_title,
+            body = R.string.guide_five_3_body,
             rods = intArrayOf(0, 0, 0, 0, 7),
-            formula = "3 + 4 = 7",
+            formula = "4 + 3 = 7",
             highlight = 4
         ),
         GuideStep(
-            title = R.string.guide_add_4_title,
-            body = R.string.guide_add_4_body,
+            title = R.string.guide_five_4_title,
+            body = R.string.guide_five_4_body,
+            rods = intArrayOf(0, 0, 0, 0, 2),
+            note = R.string.guide_five_4_note,
+            formula = "7 − 5",
+            highlight = 4
+        ),
+        GuideStep(
+            title = R.string.guide_five_5_title,
+            body = R.string.guide_five_5_body,
+            rods = intArrayOf(0, 0, 0, 0, 4),
+            formula = "7 − 3 = 4",
+            highlight = 4
+        )
+    )),
+    GuideChapter(R.string.guide_chapter_ten, listOf(
+        GuideStep(
+            title = R.string.guide_ten_1_title,
+            body = R.string.guide_ten_1_body,
+            rods = intArrayOf(0, 0, 0, 0, 8),
+            formula = "8 + 7",
+            highlight = 4
+        ),
+        GuideStep(
+            title = R.string.guide_ten_2_title,
+            body = R.string.guide_ten_2_body,
             rods = intArrayOf(0, 0, 0, 1, 8),
-            note = R.string.guide_add_4_note,
+            note = R.string.guide_ten_2_note,
             formula = "8 + 10",
             highlight = 3
         ),
         GuideStep(
-            title = R.string.guide_add_5_title,
-            body = R.string.guide_add_5_body,
+            title = R.string.guide_ten_3_title,
+            body = R.string.guide_ten_3_body,
             rods = intArrayOf(0, 0, 0, 1, 5),
             formula = "8 + 7 = 15",
             highlight = 4
-        )
-    )),
-    GuideChapter(R.string.guide_chapter_sub, listOf(
-        GuideStep(
-            title = R.string.guide_sub_1_title,
-            body = R.string.guide_sub_1_body,
-            rods = intArrayOf(0, 0, 0, 1, 2),
-            formula = "12",
-            highlight = 4
         ),
         GuideStep(
-            title = R.string.guide_sub_2_title,
-            body = R.string.guide_sub_2_body,
-            rods = intArrayOf(0, 0, 0, 0, 2),
-            note = R.string.guide_sub_2_note,
-            formula = "12 − 10",
+            title = R.string.guide_ten_4_title,
+            body = R.string.guide_ten_4_body,
+            rods = intArrayOf(0, 0, 0, 0, 5),
+            note = R.string.guide_ten_4_note,
+            formula = "15 − 10",
             highlight = 3
         ),
         GuideStep(
-            title = R.string.guide_sub_3_title,
-            body = R.string.guide_sub_3_body,
-            rods = intArrayOf(0, 0, 0, 0, 7),
-            formula = "12 − 5 = 7",
+            title = R.string.guide_ten_5_title,
+            body = R.string.guide_ten_5_body,
+            rods = intArrayOf(0, 0, 0, 0, 8),
+            formula = "15 − 7 = 8",
             highlight = 4
         )
     )),
-    GuideChapter(R.string.guide_chapter_mul, listOf(
+    GuideChapter(R.string.guide_chapter_muldiv, listOf(
         GuideStep(
-            title = R.string.guide_mul_1_title,
-            body = R.string.guide_mul_1_body,
+            title = R.string.guide_muldiv_1_title,
+            body = R.string.guide_muldiv_1_body,
             rods = intArrayOf(0, 0, 0, 2, 3),
             formula = "23 × 4",
             highlight = 4
         ),
         GuideStep(
-            title = R.string.guide_mul_2_title,
-            body = R.string.guide_mul_2_body,
-            rods = intArrayOf(0, 0, 0, 1, 2),
-            note = R.string.guide_mul_2_note,
-            formula = "12",
-            highlight = 4
-        ),
-        GuideStep(
-            title = R.string.guide_mul_3_title,
-            body = R.string.guide_mul_3_body,
+            title = R.string.guide_muldiv_2_title,
+            body = R.string.guide_muldiv_2_body,
             rods = intArrayOf(0, 0, 0, 9, 2),
+            note = R.string.guide_muldiv_2_note,
             formula = "23 × 4 = 92",
             highlight = 3
-        )
-    )),
-    GuideChapter(R.string.guide_chapter_div, listOf(
+        ),
         GuideStep(
-            title = R.string.guide_div_1_title,
-            body = R.string.guide_div_1_body,
+            title = R.string.guide_muldiv_3_title,
+            body = R.string.guide_muldiv_3_body,
             rods = intArrayOf(0, 0, 0, 8, 4),
             formula = "84 ÷ 4",
             highlight = 3
         ),
         GuideStep(
-            title = R.string.guide_div_2_title,
-            body = R.string.guide_div_2_body,
-            rods = intArrayOf(0, 0, 2, 0, 4),
-            note = R.string.guide_div_2_note,
-            formula = "2 …",
-            highlight = 2
-        ),
-        GuideStep(
-            title = R.string.guide_div_3_title,
-            body = R.string.guide_div_3_body,
-            rods = intArrayOf(0, 0, 2, 1, 0),
+            title = R.string.guide_muldiv_4_title,
+            body = R.string.guide_muldiv_4_body,
+            rods = intArrayOf(0, 0, 0, 2, 1),
+            note = R.string.guide_muldiv_4_note,
             formula = "84 ÷ 4 = 21",
             highlight = 3
         )
@@ -372,12 +424,19 @@ fun BoxScope.UsageGuideSheet(onClose: () -> Unit) {
 
                 GuideBody(step = step, modifier = Modifier.weight(1f))
 
+                val atChapterEnd = stepIndex == chapter.steps.lastIndex
                 GuideFooter(
                     stepIndex = stepIndex,
                     stepCount = chapter.steps.size,
                     atFirstOfGuide = chapterIndex == 0 && stepIndex == 0,
-                    atLastOfGuide = chapterIndex == LESSONS.lastIndex &&
-                        stepIndex == chapter.steps.lastIndex,
+                    atLastOfGuide = atChapterEnd && chapterIndex == LESSONS.lastIndex,
+                    // The last step of a chapter says where 次へ is about to take the reader,
+                    // and changes colour, so leaving the chapter is never a surprise.
+                    nextChapter = if (atChapterEnd && chapterIndex < LESSONS.lastIndex) {
+                        stringResource(id = LESSONS[chapterIndex + 1].label)
+                    } else {
+                        null
+                    },
                     onStep = { go(chapterIndex, it) },
                     onBack = ::back,
                     onNext = ::next,
@@ -541,6 +600,7 @@ private fun GuideFooter(
     stepCount: Int,
     atFirstOfGuide: Boolean,
     atLastOfGuide: Boolean,
+    nextChapter: String?,
     onStep: (Int) -> Unit,
     onBack: () -> Unit,
     onNext: () -> Unit,
@@ -605,12 +665,17 @@ private fun GuideFooter(
                 color = if (atStart) GuideDisabled else GuideInk.copy(alpha = 0.6f)
             )
             Text(
-                text = stringResource(
-                    id = if (atLastOfGuide) R.string.guide_restart else R.string.guide_next
-                ),
+                text = when {
+                    atLastOfGuide -> stringResource(id = R.string.guide_restart)
+                    nextChapter != null ->
+                        stringResource(id = R.string.guide_next_chapter, nextChapter)
+                    else -> stringResource(id = R.string.guide_next)
+                },
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (atLastOfGuide) GuideAccent else GuideInk)
+                    .background(
+                        if (atLastOfGuide || nextChapter != null) GuideAccent else GuideInk
+                    )
                     .clickable { onNext() }
                     .padding(horizontal = 22.dp, vertical = 9.dp),
                 fontFamily = Gothic,
